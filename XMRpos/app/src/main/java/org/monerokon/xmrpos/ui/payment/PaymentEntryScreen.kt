@@ -4,20 +4,21 @@ package org.monerokon.xmrpos.ui.payment
 import CurrencyConverterCard
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import java.math.BigDecimal
-import java.math.RoundingMode
 
 // PaymentEntryScreenRoot
 @Composable
@@ -31,7 +32,11 @@ fun PaymentEntryScreenRoot(viewModel: PaymentEntryViewModel, navController: NavH
         onBackspaceClick = viewModel::removeDigit,
         onClearClick = viewModel::clear,
         onSubmitClick = viewModel::submit,
-        onSettingsClick = viewModel::openSettings,
+        onSettingsClick = viewModel::tryOpenSettings,
+        openSettingsPinCodeDialog = viewModel.openSettingsPinCodeDialog,
+        pinCodeOpenSettings = viewModel.pinCodeOpenSettings,
+        updateOpenSettingsPinCodeDialog = viewModel::updateOpenSettingsPinCodeDialog,
+        openSettings = viewModel::openSettings,
     )
 }
 
@@ -45,7 +50,11 @@ fun PaymentEntryScreen(
     onBackspaceClick: () -> Unit,
     onClearClick: () -> Unit,
     onSubmitClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    openSettingsPinCodeDialog: Boolean,
+    pinCodeOpenSettings: String,
+    updateOpenSettingsPinCodeDialog: (Boolean) -> Unit,
+    openSettings: () -> Unit,
 ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column (
@@ -99,6 +108,69 @@ fun PaymentEntryScreen(
             }
         }
         }
+    when {
+        openSettingsPinCodeDialog -> {
+            OpenSettingsDialog(
+                onDismissRequest = { updateOpenSettingsPinCodeDialog(false) },
+                onConfirmation = {
+                    openSettings()
+                },
+                pinCode = pinCodeOpenSettings,
+            )
+        }
+    }
+}
+
+@Composable
+fun OpenSettingsDialog(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+    pinCode: String
+) {
+    var currentPinCode by remember { mutableStateOf("") }
+    AlertDialog(
+        icon = {
+            Icon(Icons.Default.Lock, contentDescription = "Locked")
+        },
+        title = {
+            Text(text = "Settings locked")
+        },
+        text = {
+            Column {
+                TextField(
+                    value = currentPinCode,
+                    onValueChange = {currentPinCode = it},
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    label = { Text("Enter your PIN") }
+                )
+            }
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    println("currentPinCode: $currentPinCode; pinCode: $pinCode")
+                    if (currentPinCode == pinCode) {
+                        onConfirmation()
+                    }
+                }
+            ) {
+                Text("Unlock")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text("Go back")
+            }
+        }
+    )
 }
 
 // PaymentValue

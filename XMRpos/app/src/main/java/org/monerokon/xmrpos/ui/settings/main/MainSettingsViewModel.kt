@@ -1,7 +1,6 @@
 // MainSettingsViewModel.kt
 package org.monerokon.xmrpos.ui.settings.main
 
-import androidx.compose.runtime.*
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
@@ -9,6 +8,7 @@ import org.monerokon.xmrpos.ui.CompanyInformation
 import org.monerokon.xmrpos.ui.FiatCurrencies
 import org.monerokon.xmrpos.ui.MoneroPay
 import org.monerokon.xmrpos.ui.PaymentEntry
+import org.monerokon.xmrpos.ui.Security
 
 class MainSettingsViewModel (private val savedStateHandle: SavedStateHandle): ViewModel() {
 
@@ -28,6 +28,10 @@ class MainSettingsViewModel (private val savedStateHandle: SavedStateHandle): Vi
 
     fun navigateToFiatCurrencies() {
         navController?.navigate(FiatCurrencies)
+    }
+
+    fun navigateToSecurity() {
+        navController?.navigate(Security)
     }
 
     fun navigateToMoneroPay() {

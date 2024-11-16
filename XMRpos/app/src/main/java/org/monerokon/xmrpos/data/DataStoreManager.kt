@@ -38,7 +38,8 @@ class DataStoreManager(private val context: Context) {
         val REFERENCE_FIAT_CURRENCIES: Preferences.Key<String> = stringPreferencesKey("reference_fiat_currencies")
         val REQUIRE_PIN_CODE_ON_APP_START: Preferences.Key<Boolean> = booleanPreferencesKey("require_pin_code_on_app_start")
         val REQUIRE_PIN_CODE_OPEN_SETTINGS: Preferences.Key<Boolean> = booleanPreferencesKey("require_pin_code_open_settings")
-        val PIN_CODE: Preferences.Key<String> = stringPreferencesKey("pin_code")
+        val PIN_CODE_ON_APP_START: Preferences.Key<String> = stringPreferencesKey("pin_code_on_app_start")
+        val PIN_CODE_OPEN_SETTINGS: Preferences.Key<String> = stringPreferencesKey("pin_code_open_settings")
         val MONERO_PAY_CONF_VALUE: Preferences.Key<String> = stringPreferencesKey("monero_pay_conf_value")
         val MONERO_PAY_SERVER_ADDRESS: Preferences.Key<String> = stringPreferencesKey("monero_pay_server_address")
         val MONERO_PAY_USE_CALLBACKS: Preferences.Key<Boolean> = booleanPreferencesKey("monero_pay_use_callbacks")
@@ -152,8 +153,11 @@ class DataStoreManager(private val context: Context) {
         if (getBoolean(REQUIRE_PIN_CODE_OPEN_SETTINGS).first() == null) {
             saveBoolean(REQUIRE_PIN_CODE_OPEN_SETTINGS, false)
         }
-        if (getString(PIN_CODE).first() == null) {
-            saveString(PIN_CODE, "")
+        if (getString(PIN_CODE_ON_APP_START).first() == null) {
+            saveString(PIN_CODE_ON_APP_START, "")
+        }
+        if (getString(PIN_CODE_OPEN_SETTINGS).first() == null) {
+            saveString(PIN_CODE_OPEN_SETTINGS, "")
         }
         if (getString(MONERO_PAY_CONF_VALUE).first() == null) {
             saveString(MONERO_PAY_CONF_VALUE, "0-conf")

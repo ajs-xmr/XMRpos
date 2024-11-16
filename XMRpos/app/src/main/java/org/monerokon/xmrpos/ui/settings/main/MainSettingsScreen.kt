@@ -21,6 +21,7 @@ fun MainSettingsScreenRoot(viewModel: MainSettingsViewModel, navController: NavH
         onBackClick = viewModel::navigateToPayment,
         navigateToCompanyInformation = viewModel::navigateToCompanyInformation,
         navigateToFiatCurrencies = viewModel::navigateToFiatCurrencies,
+        navigateToSecurity = viewModel::navigateToSecurity,
         navigateToMoneroPay = viewModel::navigateToMoneroPay
     )
 }
@@ -31,6 +32,7 @@ fun MainSettingsScreen(
     onBackClick: () -> Unit,
     navigateToCompanyInformation: () -> Unit,
     navigateToFiatCurrencies: () -> Unit,
+    navigateToSecurity: () -> Unit,
     navigateToMoneroPay: () -> Unit
 ) {
     Scaffold(
@@ -62,6 +64,8 @@ fun MainSettingsScreen(
             SettingsCard(text = "Company Information", onClick = {navigateToCompanyInformation()})
             Spacer(modifier = Modifier.height(24.dp))
             SettingsCard(text = "Fiat currencies", onClick = {navigateToFiatCurrencies()})
+            Spacer(modifier = Modifier.height(24.dp))
+            SettingsCard(text = "Security", onClick = {navigateToSecurity()})
             Spacer(modifier = Modifier.height(24.dp))
             SettingsCard(text = "MoneroPay", onClick = {navigateToMoneroPay()})
             Spacer(modifier = Modifier.height(24.dp))

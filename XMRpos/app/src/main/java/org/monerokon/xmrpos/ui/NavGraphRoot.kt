@@ -36,6 +36,8 @@ import org.monerokon.xmrpos.ui.settings.main.MainSettingsScreenRoot
 import org.monerokon.xmrpos.ui.settings.main.MainSettingsViewModel
 import org.monerokon.xmrpos.ui.settings.moneropay.MoneroPayScreenRoot
 import org.monerokon.xmrpos.ui.settings.moneropay.MoneroPayViewModel
+import org.monerokon.xmrpos.ui.settings.moneropay.SecurityScreenRoot
+import org.monerokon.xmrpos.ui.settings.moneropay.SecurityViewModel
 
 @Composable
 fun NavGraphRoot(
@@ -84,8 +86,8 @@ fun NavGraphRoot(
                     FiatCurrenciesScreenRoot(viewModel = fiatCurrenciesViewModel, navController = navController)
                 }
                 composable<Security> {
-                    //val securityViewModel: SecurityViewModel = viewModel()
-                    //SecurityScreenRoot(viewModel = securityViewModel, navController = navController)
+                    val securityViewModel: SecurityViewModel = viewModel()
+                    SecurityScreenRoot(viewModel = securityViewModel, navController = navController)
                 }
                 composable<ExportTransactions> {
                     //val exportTransactionsViewModel: ExportTransactionsViewModel = viewModel()

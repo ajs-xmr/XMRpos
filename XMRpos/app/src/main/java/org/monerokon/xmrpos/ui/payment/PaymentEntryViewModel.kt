@@ -5,7 +5,6 @@ import android.app.Application
 import androidx.compose.runtime.*
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,19 +24,32 @@ class PaymentEntryViewModel (application: Application, private val savedStateHan
     var paymentValue by mutableStateOf("0");
     var exchangeRate: Double? by mutableStateOf(null);
 
+    var openSettingsPinCodeDialog by mutableStateOf(false)
+    var requirePinCodeOpenSettings by mutableStateOf(true)
+    var pinCodeOpenSettings by mutableStateOf("`")
+
     init {
         // get exchange rate from public api
         fetchPrimaryFiatCurrency()
+        CoroutineScope(Dispatchers.IO).launch {
+            val storedRequirePinCodeOpenSettings = dataStoreManager.getBoolean(DataStoreManager.REQUIRE_PIN_CODE_OPEN_SETTINGS).first()
+            withContext(Dispatchers.Main) {
+                requirePinCodeOpenSettings = storedRequirePinCodeOpenSettings ?: false
+            }
+
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            val storedPinCodeOpenSettings = dataStoreManager.getString(DataStoreManager.PIN_CODE_OPEN_SETTINGS).first()
+            withContext(Dispatchers.Main) {
+                pinCodeOpenSettings = storedPinCodeOpenSettings ?: ""
+            }
+        }
     }
 
     private var navController: NavHostController? = null
 
     fun setNavController(navController: NavHostController) {
         this.navController = navController
-    }
-
-    fun navigateToSettings() {
-        navController?.navigate(Settings)
     }
 
     fun addDigit(digit: String) {
@@ -84,9 +96,21 @@ class PaymentEntryViewModel (application: Application, private val savedStateHan
         navController?.navigate(PaymentCheckout(paymentValue.toDouble(), primaryFiatCurrency))
     }
 
-    fun openSettings() {
+    fun tryOpenSettings() {
         println("open settings")
-        navigateToSettings()
+        if (requirePinCodeOpenSettings && pinCodeOpenSettings != "") {
+            openSettingsPinCodeDialog = true
+        } else {
+            navController?.navigate(Settings)
+        }
+    }
+
+    fun openSettings() {
+        navController?.navigate(Settings)
+    }
+
+    fun updateOpenSettingsPinCodeDialog(newOpenSettingsPinCodeDialog: Boolean) {
+        openSettingsPinCodeDialog = newOpenSettingsPinCodeDialog
     }
 
     fun fetchPrimaryFiatCurrency() {
