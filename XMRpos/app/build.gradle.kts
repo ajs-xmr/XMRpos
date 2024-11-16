@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.retrofit) // Retrofit
     implementation(libs.converter.gson) // Gson Converter (optional)
     implementation(libs.core)
+    implementation(libs.nanohttpd)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

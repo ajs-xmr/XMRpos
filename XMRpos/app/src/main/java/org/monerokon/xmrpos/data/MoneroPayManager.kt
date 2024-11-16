@@ -21,10 +21,10 @@ class MoneroPayManager(private val moneroPayServerAddress: String) {
     }
 
     // Fetch exchange rates and return as a map
-    suspend fun startReceive(amount: Long, description: String): StartReceiveResponse? {
+    suspend fun startReceive(amount: Long, description: String, callbackUrl: String?): StartReceiveResponse? {
         return try {
             println("MoneroPay: started")
-            api.startReceive(StartReceiveData(amount, description))
+            api.startReceive(StartReceiveData(amount, description, callbackUrl))
         } catch (e: Exception) {
             println("MoneroPay: failed")
             println("MoneroPay: $e")
@@ -47,13 +47,14 @@ class MoneroPayManager(private val moneroPayServerAddress: String) {
 data class StartReceiveData(
     val amount: Long,
     val description: String,
+    val callback_url: String?,
 )
 
 data class StartReceiveResponse(
     val address: String,
     val amount: Long,
     val description: String,
-    val createdAt: String,
+    val created_at: String,
 )
 
 
