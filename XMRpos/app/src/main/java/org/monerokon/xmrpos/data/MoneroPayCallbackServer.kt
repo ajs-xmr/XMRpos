@@ -1,6 +1,8 @@
 // MoneroPayCallbackServer.kt
 package org.monerokon.xmrpos.data
 
+import android.os.Handler
+import android.os.Looper
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -25,7 +27,9 @@ class MoneroPayCallbackServer(port: Int, private val onPaymentReceived: (Payment
             val paymentCallback = Json.decodeFromString<PaymentCallback>(data)
             println("Received payment: ${paymentCallback.transaction.amount}")
             println("Description: ${paymentCallback.description}")
-            onPaymentReceived(paymentCallback)
+            Handler(Looper.getMainLooper()).post {
+                onPaymentReceived(paymentCallback)
+            }
         } catch (e: Exception) {
             println("Failed to process callback: ${e.message}")
         }
