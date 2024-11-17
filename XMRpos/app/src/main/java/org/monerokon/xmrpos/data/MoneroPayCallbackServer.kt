@@ -1,4 +1,3 @@
-// MoneroPayCallbackServer.kt
 package org.monerokon.xmrpos.data
 
 import android.os.Handler
@@ -7,7 +6,12 @@ import fi.iki.elonen.NanoHTTPD
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-class MoneroPayCallbackServer(port: Int, private val onPaymentReceived: (PaymentCallback) -> Unit) : NanoHTTPD(port) {
+class MoneroPayCallbackServer private constructor(port: Int, private val onPaymentReceived: (PaymentCallback) -> Unit) : NanoHTTPD(port) {
+
+    init {
+        start(SOCKET_READ_TIMEOUT, false)
+    }
+
     override fun serve(session: IHTTPSession): Response {
         return if (session.method == Method.POST) {
             val bodyData = mutableMapOf<String, String>()
@@ -32,6 +36,22 @@ class MoneroPayCallbackServer(port: Int, private val onPaymentReceived: (Payment
             }
         } catch (e: Exception) {
             println("Failed to process callback: ${e.message}")
+        }
+    }
+
+    companion object {
+        @Volatile
+        private var instance: MoneroPayCallbackServer? = null
+
+        fun getInstance(port: Int, onPaymentReceived: (PaymentCallback) -> Unit): MoneroPayCallbackServer {
+            return instance ?: synchronized(this) {
+                instance ?: MoneroPayCallbackServer(port, onPaymentReceived).also { instance = it }
+            }
+        }
+
+        fun stopServer() {
+            instance?.stop()
+            instance = null
         }
     }
 }

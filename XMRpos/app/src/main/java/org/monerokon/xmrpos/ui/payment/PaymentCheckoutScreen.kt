@@ -1,4 +1,3 @@
-// PaymentCheckoutScreen.kt
 package org.monerokon.xmrpos.ui.payment
 
 import CurrencyConverterCard
@@ -37,6 +36,7 @@ fun PaymentCheckoutScreenRoot(viewModel: PaymentCheckoutViewModel, navController
         qrCodeUri = viewModel.qrCodeUri,
         generateQRCode = viewModel::generateQRCode,
         navigateBack = viewModel::navigateBack,
+        errorMessage = viewModel.errorMessage
     )
 }
 
@@ -50,6 +50,7 @@ fun PaymentCheckoutScreen(
     qrCodeUri: String,
     generateQRCode: (String, Int, Int, Int, Int, Int) -> Bitmap,
     navigateBack: () -> Unit,
+    errorMessage: String
 ) {
     val openAlertDialog = remember { mutableStateOf(false) }
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -71,12 +72,16 @@ fun PaymentCheckoutScreen(
                     items(referenceFiatCurrencies.size) { index ->
                         CurrencyConverterCard(referenceFiatCurrencies[index], exchangeRates?.get(referenceFiatCurrencies[index]), paymentValue.toString(), targetXMRvalue = targetXMRvalue, elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), color = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface))
                         if (index < referenceFiatCurrencies.size - 1) [
-                                HorizontalDivider()
+                            HorizontalDivider()
                         ]
                     }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
+            if (errorMessage.isNotEmpty()) {
+                Text(errorMessage, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             Text("Waiting on payment to complete", style = MaterialTheme.typography.bodySmall)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -128,10 +133,10 @@ fun QRCodeWithImage(uri: String, generateQRCode: (String, Int, Int, Int, Int, In
             )
         }
         Image(
-           painterResource(R.drawable.monero_symbol),
+            painterResource(R.drawable.monero_symbol),
             contentDescription = null,
-            modifier = Modifier. requiredSize(80.dp),
-            )
+            modifier = Modifier.requiredSize(80.dp),
+        )
 
     }
 }
@@ -177,4 +182,3 @@ fun AlertDialog(
         }
     )
 }
-

@@ -36,6 +36,7 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
     var moneroPayServerAddress by mutableStateOf("")
     var qrCodeUri by mutableStateOf("")
     var address by mutableStateOf("")
+    var errorMessage by mutableStateOf("")
 
     private var navController: NavHostController? = null
 
@@ -98,7 +99,9 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
                     moneroPayServerAddress = it
                     getDeviceIpAddress()?.let { ipAddress ->
                         startMoneroPayReceive(ipAddress)
-                    } ?: println("Failed to get IP address")
+                    } ?: run {
+                        errorMessage = "Failed to get IP address"
+                    }
                 }
             }
         }
@@ -114,18 +117,20 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
                     address = it.address
                     qrCodeUri = "monero:${it.address}?tx_amount=${it.amount}&tx_description=${it.description}"
                     startReceiveStatusCheck()
-                } ?: println("Failed to start receive")
+                } ?: run {
+                    errorMessage = "MoneroPay server is not responding"
+                }
             }
         }
     }
 
     private fun startReceiveStatusCheck() {
-        MoneroPayCallbackServer(8080) { paymentCallback ->
+        MoneroPayCallbackServer.getInstance(8080) { paymentCallback ->
             if (paymentCallback.amount.expected == paymentCallback.amount.covered.total) {
                 println("Payment received!")
                 navigateToPaymentSuccess(PaymentSuccess(11.5, "USD", 0.33))
             }
-        }.start()
+        }
     }
 
     private fun getDeviceIpAddress(): String? {
@@ -152,5 +157,10 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        MoneroPayCallbackServer.stopServer()
     }
 }
