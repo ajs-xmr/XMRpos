@@ -1,4 +1,3 @@
-// PaymentCheckoutViewModel.kt
 package org.monerokon.xmrpos.ui.payment
 
 import android.app.Application
@@ -6,11 +5,11 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.*
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -23,28 +22,26 @@ import org.monerokon.xmrpos.ui.PaymentEntry
 import org.monerokon.xmrpos.ui.PaymentSuccess
 import java.net.NetworkInterface
 import java.util.Hashtable
-import kotlin.collections.set
 
 class PaymentCheckoutViewModel(application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
 
     private val dataStoreManager = DataStoreManager(application)
 
-    var paymentValue by mutableDoubleStateOf(0.0)
+    var paymentValue by mutableStateOf(0.0)
     var primaryFiatCurrency by mutableStateOf("")
     var referenceFiatCurrencies by mutableStateOf(listOf<String>())
     var exchangeRates: Map<String, Double>? by mutableStateOf(null)
-    var targetXMRvalue by mutableDoubleStateOf(0.0)
+    var targetXMRvalue by mutableStateOf(0.0)
 
     var moneroPayServerAddress by mutableStateOf("")
     var qrCodeUri by mutableStateOf("")
     var address by mutableStateOf("")
 
+    private var navController: NavHostController? = null
+
     init {
-        // get exchange rate from public api
         fetchReferenceFiatCurrencies()
     }
-
-    private var navController: NavHostController? = null
 
     fun setNavController(navController: NavHostController) {
         this.navController = navController
@@ -62,26 +59,23 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
         primaryFiatCurrency = value
     }
 
-    fun fetchReferenceFiatCurrencies() {
-        CoroutineScope(Dispatchers.IO).launch {
+    private fun fetchReferenceFiatCurrencies() {
+        viewModelScope.launch(Dispatchers.IO) {
             val newReferenceFiatCurrencies = dataStoreManager.getStringList(DataStoreManager.REFERENCE_FIAT_CURRENCIES).first()
-            if (newReferenceFiatCurrencies != null) {
+            newReferenceFiatCurrencies?.let {
                 withContext(Dispatchers.Main) {
-                    referenceFiatCurrencies = newReferenceFiatCurrencies
-                    println("referenceFiatCurrencies: $newReferenceFiatCurrencies")
-                    val newReferenceFiatCurrenciesWithPrimary = newReferenceFiatCurrencies + primaryFiatCurrency
-                    fetchExchangeRates(newReferenceFiatCurrenciesWithPrimary)
+                    referenceFiatCurrencies = it
+                    fetchExchangeRates(it + primaryFiatCurrency)
                 }
             }
         }
     }
 
-    fun fetchExchangeRates(currencies: List<String>) {
-        CoroutineScope(Dispatchers.IO).launch {
+    private fun fetchExchangeRates(currencies: List<String>) {
+        viewModelScope.launch(Dispatchers.IO) {
             val rates = ExchangeRateManager.fetchExchangeRates("XMR", currencies)
             rates?.let {
                 withContext(Dispatchers.Main) {
-                    println("rates: $it")
                     exchangeRates = it
                     calculateTargetXMRvalue()
                 }
@@ -89,50 +83,43 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
         }
     }
 
-    fun calculateTargetXMRvalue() {
-        exchangeRates?.get(primaryFiatCurrency).let {
-            if (it != null) {
-                targetXMRvalue = paymentValue / it
-                startReceive()
-            }
+    private fun calculateTargetXMRvalue() {
+        exchangeRates?.get(primaryFiatCurrency)?.let {
+            targetXMRvalue = paymentValue / it
+            startReceive()
         }
     }
 
-    fun startReceive() {
-        CoroutineScope(Dispatchers.IO).launch {
+    private fun startReceive() {
+        viewModelScope.launch(Dispatchers.IO) {
             val newMoneroPayServerAddress = dataStoreManager.getString(DataStoreManager.MONERO_PAY_SERVER_ADDRESS).first()
-            if (newMoneroPayServerAddress != null) {
+            newMoneroPayServerAddress?.let {
                 withContext(Dispatchers.Main) {
-                    moneroPayServerAddress = newMoneroPayServerAddress
-                    println("moneroPayServerAddress: $newMoneroPayServerAddress")
-                    val ipAddress = getDeviceIpAddress()
-                        if (ipAddress != null) {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                val response = MoneroPayManager(moneroPayServerAddress).startReceive((targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080")
-                                withContext(Dispatchers.Main) {
-                                    if (response != null) {
-                                        println("DID IT: $response")
-                                        address = response.address
-                                        qrCodeUri = "monero:${response.address}?tx_amount=${response.amount}&tx_description=${response.description}"
-                                        startReceiveStatusCheck()
-                                    } else {
-                                        print("DID NOT DO IT")
-                                    }
-                                }
-                            }
-                        } else {
-                            println("Failed to get IP address")
-                        }
-                    }
+                    moneroPayServerAddress = it
+                    getDeviceIpAddress()?.let { ipAddress ->
+                        startMoneroPayReceive(ipAddress)
+                    } ?: println("Failed to get IP address")
                 }
             }
         }
-
-    fun navigateToPaymentSuccess(paymentSuccess: PaymentSuccess) {
-        navController?.navigate(paymentSuccess)
     }
 
-    fun startReceiveStatusCheck() {
+    private fun startMoneroPayReceive(ipAddress: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val response = MoneroPayManager(moneroPayServerAddress).startReceive(
+                (targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080"
+            )
+            withContext(Dispatchers.Main) {
+                response?.let {
+                    address = it.address
+                    qrCodeUri = "monero:${it.address}?tx_amount=${it.amount}&tx_description=${it.description}"
+                    startReceiveStatusCheck()
+                } ?: println("Failed to start receive")
+            }
+        }
+    }
+
+    private fun startReceiveStatusCheck() {
         MoneroPayCallbackServer(8080) { paymentCallback ->
             if (paymentCallback.amount.expected == paymentCallback.amount.covered.total) {
                 println("Payment received!")
@@ -141,30 +128,29 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
         }.start()
     }
 
-    fun getDeviceIpAddress(): String? {
-        return NetworkInterface
-            .getNetworkInterfaces()
-            .toList()
+    private fun getDeviceIpAddress(): String? {
+        return NetworkInterface.getNetworkInterfaces().toList()
             .flatMap { it.inetAddresses.toList() }
-            .firstOrNull { it.isSiteLocalAddress && it.hostAddress.startsWith("192.") }
+            .firstOrNull { it.isSiteLocalAddress }
             ?.hostAddress
+    }
 
+    fun navigateToPaymentSuccess(paymentSuccess: PaymentSuccess) {
+        navController?.navigate(paymentSuccess)
     }
 
     fun generateQRCode(text: String, width: Int, height: Int, margin: Int, color: Int, background: Int): Bitmap {
         val writer = QRCodeWriter()
-        val hints = Hashtable<EncodeHintType, Any>()
-        hints[EncodeHintType.MARGIN] = margin
+        val hints = Hashtable<EncodeHintType, Any>().apply {
+            this[EncodeHintType.MARGIN] = margin
+        }
         val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, width, height, hints)
-        val width = bitMatrix.width
-        val height = bitMatrix.height
-        val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-
-        for (x in 0 until width) {
-            for (y in 0 until height) {
-                bmp.setPixel(x, y, if (bitMatrix[x, y]) color else background)
+        return Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565).apply {
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    setPixel(x, y, if (bitMatrix[x, y]) color else background)
+                }
             }
         }
-        return bmp
     }
 }
