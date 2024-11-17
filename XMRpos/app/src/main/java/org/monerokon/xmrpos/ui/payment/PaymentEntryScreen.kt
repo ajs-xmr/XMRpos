@@ -14,6 +14,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -58,8 +59,8 @@ fun PaymentEntryScreen(
 ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column (
-            verticalArrangement = Arrangement.Top,
-            modifier = Modifier.padding(innerPadding)
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.padding(innerPadding).fillMaxHeight()
         ) {
             Row(
                 horizontalArrangement = Arrangement.End,
@@ -72,31 +73,32 @@ fun PaymentEntryScreen(
                     Icon(imageVector = Icons.Rounded.Settings, contentDescription = "Settings")
                 }
             }
-            Column(
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .padding(horizontal = 24.dp)
-                    .weight(1f)
+            Box(
+                modifier = Modifier.padding(horizontal = 44.dp).padding(bottom = 16.dp),
             ) {
-                Box(
-                  modifier = Modifier.padding(16.dp),
-                ) {
-                    CurrencyConverterCard(
-                        currency = primaryFiatCurrency,
-                        exchangeRate = exchangeRate,
-                        paymentValue = paymentValue,
-                    )
-                }
+                CurrencyConverterCard(
+                    currency = primaryFiatCurrency,
+                    exchangeRate = exchangeRate,
+                    paymentValue = paymentValue,
+                )
+            }
+            Column(
+                verticalArrangement = Arrangement.Bottom,
+                modifier = Modifier
+                    .padding(horizontal = 28.dp)
+                    .wrapContentHeight()
+            ) {
+
                 Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 32.dp))
                 Spacer(modifier = Modifier.height(8.dp))
                 PaymentValue(value = paymentValue, currency = primaryFiatCurrency)
                 Spacer(modifier = Modifier.height(8.dp))
-                PaymentEntryButtons(
+                Box (
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                ) { PaymentEntryButtons(
                     onDigitClick = onDigitClick,
-                    onBackspaceClick = onBackspaceClick,
-                    onClearClick = onClearClick
-                )
+                ) }
                 Spacer(modifier = Modifier.height(24.dp))
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 32.dp))
                 Spacer(modifier = Modifier.height(24.dp))
@@ -105,6 +107,7 @@ fun PaymentEntryScreen(
                     onClearClick = onClearClick,
                     onSubmitClick = onSubmitClick
                 )
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
         }
@@ -196,8 +199,6 @@ fun PaymentValue(value: String, currency: String) {
 @Composable
 fun PaymentEntryButtons(
     onDigitClick: (String) -> Unit,
-    onBackspaceClick: () -> Unit,
-    onClearClick: () -> Unit
 ) {
     Column {
         Row {
@@ -206,54 +207,60 @@ fun PaymentEntryButtons(
                 onClick = { onDigitClick("1") },
                 modifier = Modifier.weight(1f)
             )
+            ButtonSpacing()
             PaymentEntryButton(
                 text = "2",
                 onClick = { onDigitClick("2") },
                 modifier = Modifier.weight(1f)
             )
+            ButtonSpacing()
             PaymentEntryButton(
                 text = "3",
                 onClick = { onDigitClick("3") },
                 modifier = Modifier.weight(1f)
             )
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         Row {
             PaymentEntryButton(
                 text = "4",
                 onClick = { onDigitClick("4") },
                 modifier = Modifier.weight(1f)
             )
+            ButtonSpacing()
             PaymentEntryButton(
                 text = "5",
                 onClick = { onDigitClick("5") },
                 modifier = Modifier.weight(1f)
             )
+            ButtonSpacing()
             PaymentEntryButton(
                 text = "6",
                 onClick = { onDigitClick("6") },
                 modifier = Modifier.weight(1f)
             )
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         Row {
             PaymentEntryButton(
                 text = "7",
                 onClick = { onDigitClick("7") },
                 modifier = Modifier.weight(1f)
             )
+            ButtonSpacing()
             PaymentEntryButton(
                 text = "8",
                 onClick = { onDigitClick("8") },
                 modifier = Modifier.weight(1f)
             )
+            ButtonSpacing()
             PaymentEntryButton(
                 text = "9",
                 onClick = { onDigitClick("9") },
                 modifier = Modifier.weight(1f)
             )
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         Row (
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -262,6 +269,7 @@ fun PaymentEntryButtons(
                 onClick = { onDigitClick("0") },
                 modifier = Modifier.weight(2f)
             )
+            ButtonSpacing()
             PaymentEntryButton(
                 text = ".",
                 onClick = { onDigitClick(".") },
@@ -272,16 +280,28 @@ fun PaymentEntryButtons(
 }
 
 @Composable
+fun ButtonSpacing() {
+    Spacer(
+        modifier = Modifier.padding(horizontal = 10.dp)
+    )
+}
+
+@Composable
 fun PaymentEntryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    FilledTonalButton(
+    OutlinedButton(
         onClick = onClick,
-        modifier = modifier.height(72.dp).padding(horizontal = 16.dp)
+        border = ButtonDefaults.outlinedButtonBorder().copy(width = 1.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = ButtonDefaults.outlinedButtonColors().copy(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        modifier = modifier.height(72.dp)
     ) {
-        Text(text = text)
+        Text(text = text, style = MaterialTheme.typography.titleMedium)
     }
 }
 
@@ -300,18 +320,21 @@ fun PaymentEntryControlButtons(
             icon = Icons.Rounded.Clear,
             contentDescription = "Clear",
             onClick = onClearClick,
+            containerColor = Color(0xFF770000),
             modifier = Modifier.weight(1f)
         )
         PaymentEntryControlButton(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
             contentDescription = "Back",
             onClick = onBackspaceClick,
+            containerColor = Color(0xFF797000), // Yellow
             modifier = Modifier.weight(1f)
         )
         PaymentEntryControlButton(
             icon = Icons.Rounded.Done,
             contentDescription = "Done",
             onClick = onSubmitClick,
+            containerColor = Color(0xFF1C6E00),
             modifier = Modifier.weight(1f)
         )
     }
@@ -322,11 +345,15 @@ fun PaymentEntryControlButtons(
 fun PaymentEntryControlButton(
     icon: ImageVector,
     contentDescription: String?,
+    containerColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     FilledTonalButton(
         onClick = onClick,
+        colors = ButtonDefaults.buttonColors().copy(
+            containerColor = containerColor
+        ),
         modifier = modifier.height(72.dp).padding(horizontal = 16.dp)
     ) {
         Icon(imageVector = icon, contentDescription = contentDescription)
