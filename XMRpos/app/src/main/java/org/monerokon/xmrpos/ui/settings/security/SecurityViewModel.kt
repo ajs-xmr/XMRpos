@@ -1,20 +1,21 @@
 package org.monerokon.xmrpos.ui.settings.moneropay
 
-import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import org.monerokon.xmrpos.data.DataStoreManager
+import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.ui.Settings
+import javax.inject.Inject
 
-class SecurityViewModel (application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
-
-    private val dataStoreManager = DataStoreManager(application)
+@HiltViewModel
+class SecurityViewModel @Inject constructor(
+    private val dataStoreRepository: DataStoreRepository,
+) : ViewModel() {
 
     private var navController: NavHostController? = null
 
@@ -33,27 +34,23 @@ class SecurityViewModel (application: Application, private val savedStateHandle:
 
     init {
         viewModelScope.launch {
-            dataStoreManager.getBoolean(DataStoreManager.REQUIRE_PIN_CODE_ON_APP_START).collect { storedRequirePinCodeOnAppStart  ->
-                println("storedRequirePinCodeOnAppStart: $storedRequirePinCodeOnAppStart")
-                requirePinCodeOnAppStart = storedRequirePinCodeOnAppStart?: false
+            dataStoreRepository.getRequirePinCodeOnAppStart().collect { storedRequirePinCodeOnAppStart ->
+                requirePinCodeOnAppStart = storedRequirePinCodeOnAppStart
             }
         }
         viewModelScope.launch {
-            dataStoreManager.getBoolean(DataStoreManager.REQUIRE_PIN_CODE_OPEN_SETTINGS).collect { storedRequirePinCodeOpenSettings  ->
-                println("storedRequirePinCodeOpenSettings: $storedRequirePinCodeOpenSettings")
-                requirePinCodeOpenSettings = storedRequirePinCodeOpenSettings?: false
+            dataStoreRepository.getRequirePinCodeOnOpenSettings().collect { storedRequirePinCodeOpenSettings ->
+                requirePinCodeOpenSettings = storedRequirePinCodeOpenSettings
             }
         }
         viewModelScope.launch {
-            dataStoreManager.getString(DataStoreManager.PIN_CODE_ON_APP_START).collect { storedPinCodeOnAppStart  ->
-                println("storedPinCodeOnAppStart: $storedPinCodeOnAppStart")
-                pinCodeOnAppStart = storedPinCodeOnAppStart?: ""
+            dataStoreRepository.getPinCodeOnAppStart().collect { storedPinCodeOnAppStart ->
+                pinCodeOnAppStart = storedPinCodeOnAppStart
             }
         }
         viewModelScope.launch {
-            dataStoreManager.getString(DataStoreManager.PIN_CODE_OPEN_SETTINGS).collect { storedPinCodeOpenSettings  ->
-                println("storedPinCodeOpenSettings: $storedPinCodeOpenSettings")
-                pinCodeOpenSettings = storedPinCodeOpenSettings?: ""
+            dataStoreRepository.getPinCodeOpenSettings().collect { storedPinCodeOpenSettings ->
+                pinCodeOpenSettings = storedPinCodeOpenSettings
             }
         }
     }
@@ -61,14 +58,14 @@ class SecurityViewModel (application: Application, private val savedStateHandle:
     fun updateRequirePinCodeOnAppStart(newRequirePinCodeOnAppStart: Boolean) {
         requirePinCodeOnAppStart = newRequirePinCodeOnAppStart
         viewModelScope.launch {
-            dataStoreManager.saveBoolean(DataStoreManager.REQUIRE_PIN_CODE_ON_APP_START, newRequirePinCodeOnAppStart)
+            dataStoreRepository.saveRequirePinCodeOnAppStart(newRequirePinCodeOnAppStart)
         }
     }
 
     fun updateRequirePinCodeOpenSettings(newRequirePinCodeOpenSettings: Boolean) {
         requirePinCodeOpenSettings = newRequirePinCodeOpenSettings
         viewModelScope.launch {
-            dataStoreManager.saveBoolean(DataStoreManager.REQUIRE_PIN_CODE_OPEN_SETTINGS, newRequirePinCodeOpenSettings)
+            dataStoreRepository.saveRequirePinCodeOnOpenSettings(newRequirePinCodeOpenSettings)
         }
     }
 
@@ -81,7 +78,7 @@ class SecurityViewModel (application: Application, private val savedStateHandle:
         }
         pinCodeOnAppStart = newPinCodeOnAppStart
         viewModelScope.launch {
-            dataStoreManager.saveString(DataStoreManager.PIN_CODE_ON_APP_START, newPinCodeOnAppStart)
+            dataStoreRepository.savePinCodeOnAppStart(newPinCodeOnAppStart)
         }
     }
 
@@ -94,7 +91,7 @@ class SecurityViewModel (application: Application, private val savedStateHandle:
         }
         pinCodeOpenSettings = newPinCodeOpenSettings
         viewModelScope.launch {
-            dataStoreManager.saveString(DataStoreManager.PIN_CODE_OPEN_SETTINGS, newPinCodeOpenSettings)
+            dataStoreRepository.savePinCodeOpenSettings(newPinCodeOpenSettings)
         }
     }
 }

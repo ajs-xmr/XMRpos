@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -58,7 +59,7 @@ fun NavGraphRoot(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable<PaymentEntry> {
-                    val paymentEntryViewModel: PaymentEntryViewModel = viewModel()
+                    val paymentEntryViewModel: PaymentEntryViewModel =  hiltViewModel()
                     PaymentEntryScreenRoot(
                         viewModel = paymentEntryViewModel,
                         navController = navController
@@ -66,7 +67,7 @@ fun NavGraphRoot(
                 }
                 composable<PaymentCheckout> {
                     val args = it.toRoute<PaymentCheckout>()
-                    val paymentCheckoutViewModel: PaymentCheckoutViewModel = viewModel()
+                    val paymentCheckoutViewModel: PaymentCheckoutViewModel = hiltViewModel()
                     PaymentCheckoutScreenRoot(viewModel = paymentCheckoutViewModel, navController = navController, fiatAmount = args.fiatAmount, primaryFiatCurrency = args.primaryFiatCurrency)
                 }
                 composable<PaymentSuccess> {
@@ -78,15 +79,15 @@ fun NavGraphRoot(
                     MainSettingsScreenRoot(viewModel = mainSettingsViewModel, navController = navController)
                 }
                 composable<CompanyInformation> {
-                    val companyInformationViewModel: CompanyInformationViewModel = viewModel()
+                    val companyInformationViewModel: CompanyInformationViewModel = hiltViewModel()
                     CompanyInformationScreenRoot(viewModel = companyInformationViewModel, navController = navController)
                 }
                 composable<FiatCurrencies> {
-                    val fiatCurrenciesViewModel: FiatCurrenciesViewModel = viewModel()
+                    val fiatCurrenciesViewModel: FiatCurrenciesViewModel = hiltViewModel()
                     FiatCurrenciesScreenRoot(viewModel = fiatCurrenciesViewModel, navController = navController)
                 }
                 composable<Security> {
-                    val securityViewModel: SecurityViewModel = viewModel()
+                    val securityViewModel: SecurityViewModel = hiltViewModel()
                     SecurityScreenRoot(viewModel = securityViewModel, navController = navController)
                 }
                 composable<ExportTransactions> {
@@ -94,7 +95,7 @@ fun NavGraphRoot(
                     //ExportTransactionsScreenRoot(viewModel = exportTransactionsViewModel, navController = navController)
                 }
                 composable<MoneroPay> {
-                    val moneroPayViewModel: MoneroPayViewModel = viewModel()
+                    val moneroPayViewModel: MoneroPayViewModel = hiltViewModel()
                     MoneroPayScreenRoot(viewModel = moneroPayViewModel, navController = navController)
                 }
             }

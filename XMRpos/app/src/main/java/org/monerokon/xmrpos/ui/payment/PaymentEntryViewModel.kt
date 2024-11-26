@@ -1,24 +1,30 @@
 // PaymentEntryViewModel.kt
 package org.monerokon.xmrpos.ui.payment
 
-import android.app.Application
 import androidx.compose.runtime.*
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.monerokon.xmrpos.data.DataStoreManager
-import org.monerokon.xmrpos.data.ExchangeRateManager
+import org.monerokon.xmrpos.data.repository.DataStoreRepository
+import org.monerokon.xmrpos.data.repository.ExchangeRateRepository
 import org.monerokon.xmrpos.ui.PaymentCheckout
 import org.monerokon.xmrpos.ui.Settings
+import javax.inject.Inject
 
-class PaymentEntryViewModel (application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
+@HiltViewModel
+class PaymentEntryViewModel @Inject constructor(
+    private val exchangeRateRepository: ExchangeRateRepository,
+    private val dataStoreRepository: DataStoreRepository,
+) : ViewModel() {
 
-    private val dataStoreManager = DataStoreManager(application)
+    private var navController: NavHostController? = null
+
+    fun setNavController(navController: NavHostController) {
+        this.navController = navController
+    }
 
     var primaryFiatCurrency by mutableStateOf("");
     var paymentValue by mutableStateOf("0");
@@ -29,30 +35,34 @@ class PaymentEntryViewModel (application: Application, private val savedStateHan
     var pinCodeOpenSettings by mutableStateOf("`")
 
     init {
+        fetchExchangeRate()
         // get exchange rate from public api
-        fetchPrimaryFiatCurrency()
-        CoroutineScope(Dispatchers.IO).launch {
-            val storedRequirePinCodeOpenSettings = dataStoreManager.getBoolean(DataStoreManager.REQUIRE_PIN_CODE_OPEN_SETTINGS).first()
-            withContext(Dispatchers.Main) {
-                requirePinCodeOpenSettings = storedRequirePinCodeOpenSettings ?: false
+        viewModelScope.launch {
+            dataStoreRepository.getRequirePinCodeOnOpenSettings().collect {  storedRequirePinCodeOpenSettings ->
+                requirePinCodeOpenSettings = storedRequirePinCodeOpenSettings
             }
-
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            val storedPinCodeOpenSettings = dataStoreManager.getString(DataStoreManager.PIN_CODE_OPEN_SETTINGS).first()
-            withContext(Dispatchers.Main) {
-                pinCodeOpenSettings = storedPinCodeOpenSettings ?: ""
+        viewModelScope.launch {
+            dataStoreRepository.getPinCodeOpenSettings().collect { storedPinCodeOpenSettings ->
+                pinCodeOpenSettings = storedPinCodeOpenSettings
             }
         }
     }
 
-    private var navController: NavHostController? = null
+    fun fetchExchangeRate() {
+        viewModelScope.launch {
+            val primaryFiatCurrencyResponse = exchangeRateRepository.getPrimaryFiatCurrency().first()
+            primaryFiatCurrency = primaryFiatCurrencyResponse
 
-    fun setNavController(navController: NavHostController) {
-        this.navController = navController
+            val exchangeRateResponse = exchangeRateRepository.fetchPrimaryExchangeRate().first()
+            // get value of first key from ExchangeRateResponse (Map<String, Double>)
+            exchangeRate = exchangeRateResponse.getOrNull()?.entries?.first()?.value
+        }
     }
+
 
     fun addDigit(digit: String) {
+        fetchExchangeRate()
         // Rules to prevent invalid input
         if (paymentValue.length >= 16) {
             return
@@ -113,30 +123,4 @@ class PaymentEntryViewModel (application: Application, private val savedStateHan
         openSettingsPinCodeDialog = newOpenSettingsPinCodeDialog
     }
 
-    fun fetchPrimaryFiatCurrency() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val newPrimaryFiatCurrency = dataStoreManager.getString(DataStoreManager.PRIMARY_FIAT_CURRENCY).first()
-            if (newPrimaryFiatCurrency != null) {
-                withContext(Dispatchers.Main) {
-                    primaryFiatCurrency = newPrimaryFiatCurrency;
-                    if (newPrimaryFiatCurrency != "") {
-                        println("primaryFiatCurrency: $newPrimaryFiatCurrency")
-                        fetchExchangeRate(newPrimaryFiatCurrency)
-                    }
-                }
-            }
-        }
-    }
-
-    fun fetchExchangeRate(currency: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val rates = ExchangeRateManager.fetchExchangeRates("XMR", listOf(currency))
-            rates?.let {
-                println("rate: ${it[currency]}")
-                withContext(Dispatchers.Main) {
-                    exchangeRate = it[currency]
-                }
-            }
-        }
-    }
 }

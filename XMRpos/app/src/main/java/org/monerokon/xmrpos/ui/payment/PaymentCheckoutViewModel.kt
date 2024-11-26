@@ -1,31 +1,42 @@
 package org.monerokon.xmrpos.ui.payment
 
-import android.app.Application
 import android.graphics.Bitmap
 import androidx.compose.runtime.*
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.monerokon.xmrpos.data.DataStoreManager
-import org.monerokon.xmrpos.data.ExchangeRateManager
 import org.monerokon.xmrpos.data.MoneroPayCallbackServer
-import org.monerokon.xmrpos.data.MoneroPayManager
+import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
+import org.monerokon.xmrpos.data.repository.ExchangeRateRepository
+import org.monerokon.xmrpos.data.repository.MoneroPayRepository
 import org.monerokon.xmrpos.ui.PaymentEntry
 import org.monerokon.xmrpos.ui.PaymentSuccess
 import java.net.NetworkInterface
 import java.util.Hashtable
+import javax.inject.Inject
 
-class PaymentCheckoutViewModel(application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
+@HiltViewModel
+class PaymentCheckoutViewModel @Inject constructor(
+    private val exchangeRateRepository: ExchangeRateRepository,
+    private val moneroPayRepository: MoneroPayRepository,
+) : ViewModel() {
 
-    private val dataStoreManager = DataStoreManager(application)
+    private var navController: NavHostController? = null
+
+    fun setNavController(navController: NavHostController) {
+        this.navController = navController
+    }
+
+    fun navigateBack() {
+        navController?.navigate(PaymentEntry)
+    }
 
     var paymentValue by mutableStateOf(0.0)
     var primaryFiatCurrency by mutableStateOf("")
@@ -38,18 +49,8 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
     var address by mutableStateOf("")
     var errorMessage by mutableStateOf("")
 
-    private var navController: NavHostController? = null
-
     init {
-        fetchReferenceFiatCurrencies()
-    }
-
-    fun setNavController(navController: NavHostController) {
-        this.navController = navController
-    }
-
-    fun navigateBack() {
-        navController?.navigate(PaymentEntry)
+        fetchExchangeRates()
     }
 
     fun updatePaymentValue(value: Double) {
@@ -60,67 +61,43 @@ class PaymentCheckoutViewModel(application: Application, private val savedStateH
         primaryFiatCurrency = value
     }
 
-    private fun fetchReferenceFiatCurrencies() {
+    private fun fetchExchangeRates() {
         viewModelScope.launch(Dispatchers.IO) {
-            val newReferenceFiatCurrencies = dataStoreManager.getStringList(DataStoreManager.REFERENCE_FIAT_CURRENCIES).first()
-            newReferenceFiatCurrencies?.let {
-                withContext(Dispatchers.Main) {
-                    referenceFiatCurrencies = it
-                    fetchExchangeRates(it + primaryFiatCurrency)
-                }
-            }
+            val primaryFiatCurrencyResponse = exchangeRateRepository.getPrimaryFiatCurrency().first()
+            primaryFiatCurrency = primaryFiatCurrencyResponse
+
+            val referenceFiatCurrenciesResponse = exchangeRateRepository.getReferenceFiatCurrencies().first()
+            referenceFiatCurrencies = referenceFiatCurrenciesResponse
+
+            val exchangeRatesResponse = exchangeRateRepository.fetchExchangeRates().first()
+            exchangeRates = exchangeRatesResponse.getOrNull()
+
+            targetXMRvalue = paymentValue / (exchangeRates?.get(primaryFiatCurrency) ?: 0.0)
+            println("Reference exchange rates: $referenceFiatCurrencies")
+            println("Exchange rates: $exchangeRates")
+
+            startMoneroPayReceive()
         }
     }
 
-    private fun fetchExchangeRates(currencies: List<String>) {
+    private fun startMoneroPayReceive() {
+        val ipAddress = getDeviceIpAddress()
+        val moneroPayReceiveRequest = MoneroPayReceiveRequest(
+            (targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080"
+        )
         viewModelScope.launch(Dispatchers.IO) {
-            val rates = ExchangeRateManager.fetchExchangeRates("XMR", currencies)
-            rates?.let {
-                withContext(Dispatchers.Main) {
-                    exchangeRates = it
-                    calculateTargetXMRvalue()
-                }
-            }
-        }
-    }
+            val response = moneroPayRepository.startReceive(moneroPayReceiveRequest)
 
-    private fun calculateTargetXMRvalue() {
-        exchangeRates?.get(primaryFiatCurrency)?.let {
-            targetXMRvalue = paymentValue / it
-            startReceive()
-        }
-    }
+            println("MoneroPay: $response")
 
-    private fun startReceive() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val newMoneroPayServerAddress = dataStoreManager.getString(DataStoreManager.MONERO_PAY_SERVER_ADDRESS).first()
-            newMoneroPayServerAddress?.let {
-                withContext(Dispatchers.Main) {
-                    moneroPayServerAddress = it
-                    getDeviceIpAddress()?.let { ipAddress ->
-                        startMoneroPayReceive(ipAddress)
-                    } ?: run {
-                        errorMessage = "Failed to get IP address"
-                    }
-                }
+            if (response != null) {
+                address = response.address
+                qrCodeUri = "monero:${response.address}?tx_amount=${response.amount}&tx_description=${response.description}"
+                startReceiveStatusCheck()
+            } else {
+                errorMessage = "MoneroPay server is not responding"
             }
-        }
-    }
 
-    private fun startMoneroPayReceive(ipAddress: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val response = MoneroPayManager(moneroPayServerAddress).startReceive(
-                (targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080"
-            )
-            withContext(Dispatchers.Main) {
-                response?.let {
-                    address = it.address
-                    qrCodeUri = "monero:${it.address}?tx_amount=${it.amount}&tx_description=${it.description}"
-                    startReceiveStatusCheck()
-                } ?: run {
-                    errorMessage = "MoneroPay server is not responding"
-                }
-            }
         }
     }
 

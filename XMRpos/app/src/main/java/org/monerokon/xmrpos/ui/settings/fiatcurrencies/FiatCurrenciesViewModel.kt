@@ -1,25 +1,23 @@
 package org.monerokon.xmrpos.ui.settings.fiatcurrencies
 
-import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import org.monerokon.xmrpos.data.DataStoreManager
+import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.ui.Settings
+import javax.inject.Inject
 
-class FiatCurrenciesViewModel (application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
+@HiltViewModel
+class FiatCurrenciesViewModel @Inject constructor(
+    private val dataStoreRepository: DataStoreRepository,
+) : ViewModel() {
 
     val fiatOptions = listOf("USD", "EUR", "CZK", "MXN")
-
-    private val dataStoreManager = DataStoreManager(application)
 
     private var navController: NavHostController? = null
 
@@ -37,15 +35,15 @@ class FiatCurrenciesViewModel (application: Application, private val savedStateH
 
     init {
         viewModelScope.launch {
-            dataStoreManager.getString(DataStoreManager.PRIMARY_FIAT_CURRENCY).collect { storedPrimaryFiatCurrency ->
+            dataStoreRepository.getPrimaryFiatCurrency().collect { storedPrimaryFiatCurrency ->
                 println("primaryFiatCurrency: $storedPrimaryFiatCurrency")
-                primaryFiatCurrency = storedPrimaryFiatCurrency?: ""
+                primaryFiatCurrency = storedPrimaryFiatCurrency
             }
         }
         viewModelScope.launch {
-            dataStoreManager.getStringList(DataStoreManager.REFERENCE_FIAT_CURRENCIES).collect { storedReferenceFiatCurrencies ->
+            dataStoreRepository.getReferenceFiatCurrencies().collect { storedReferenceFiatCurrencies ->
                 println("storedContactInformation: $storedReferenceFiatCurrencies")
-                referenceFiatCurrencies = storedReferenceFiatCurrencies?: emptyList()
+                referenceFiatCurrencies = storedReferenceFiatCurrencies
             }
         }
     }
@@ -53,21 +51,21 @@ class FiatCurrenciesViewModel (application: Application, private val savedStateH
     fun updatePrimaryFiatCurrency(newPrimaryFiatCurrency: String) {
         primaryFiatCurrency = newPrimaryFiatCurrency
         viewModelScope.launch {
-            dataStoreManager.saveString(DataStoreManager.PRIMARY_FIAT_CURRENCY, newPrimaryFiatCurrency)
+            dataStoreRepository.savePrimaryFiatCurrency(newPrimaryFiatCurrency)
         }
     }
 
     fun addReferenceFiatCurrency(newReferenceFiatCurrency: String) {
         referenceFiatCurrencies = referenceFiatCurrencies + newReferenceFiatCurrency
         viewModelScope.launch {
-            dataStoreManager.saveStringList(DataStoreManager.REFERENCE_FIAT_CURRENCIES, referenceFiatCurrencies)
+            dataStoreRepository.saveReferenceFiatCurrencies(referenceFiatCurrencies)
         }
     }
 
     fun removeReferenceFiatCurrency(index: Int) {
         referenceFiatCurrencies = referenceFiatCurrencies.toMutableList().apply { removeAt(index) }
         viewModelScope.launch {
-            dataStoreManager.saveStringList(DataStoreManager.REFERENCE_FIAT_CURRENCIES, referenceFiatCurrencies)
+            dataStoreRepository.saveReferenceFiatCurrencies(referenceFiatCurrencies)
         }
     }
 
@@ -79,7 +77,7 @@ class FiatCurrenciesViewModel (application: Application, private val savedStateH
                 this[index - 1] = temp
             }
             viewModelScope.launch {
-                dataStoreManager.saveStringList(DataStoreManager.REFERENCE_FIAT_CURRENCIES, referenceFiatCurrencies)
+                dataStoreRepository.saveReferenceFiatCurrencies(referenceFiatCurrencies)
             }
         }
     }
@@ -92,12 +90,10 @@ class FiatCurrenciesViewModel (application: Application, private val savedStateH
                 this[index + 1] = temp
             }
             viewModelScope.launch {
-                dataStoreManager.saveStringList(DataStoreManager.REFERENCE_FIAT_CURRENCIES, referenceFiatCurrencies)
+                dataStoreRepository.saveReferenceFiatCurrencies(referenceFiatCurrencies)
             }
         }
     }
-
-
 }
 
 

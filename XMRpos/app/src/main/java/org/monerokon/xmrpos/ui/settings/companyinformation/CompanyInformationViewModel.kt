@@ -1,27 +1,23 @@
 // CompanyInformationViewModel.kt
 package org.monerokon.xmrpos.ui.settings.companyinformation
 
-import android.app.Application
-import android.content.Context
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import org.monerokon.xmrpos.data.DataStoreManager
+import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.ui.Settings
+import javax.inject.Inject
 
-class CompanyInformationViewModel(application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
-
-    private val dataStoreManager = DataStoreManager(application)
+@HiltViewModel
+class CompanyInformationViewModel @Inject constructor(
+    private val dataStoreRepository: DataStoreRepository,
+) : ViewModel() {
 
     private var navController: NavHostController? = null
 
@@ -40,15 +36,13 @@ class CompanyInformationViewModel(application: Application, private val savedSta
     // Load data from DataStore when ViewModel is initialized
     init {
         viewModelScope.launch {
-            dataStoreManager.getString(DataStoreManager.COMPANY_NAME).collect { storedCompanyName ->
-                println("storedCompanyName: $storedCompanyName")
-                companyName = storedCompanyName?: ""
+            dataStoreRepository.getCompanyName().collect { storedCompanyName ->
+                companyName = storedCompanyName
             }
         }
         viewModelScope.launch {
-            dataStoreManager.getString(DataStoreManager.CONTACT_INFORMATION).collect { storedContactInformation ->
-                println("storedContactInformation: $storedContactInformation")
-                contactInformation = storedContactInformation?: ""
+            dataStoreRepository.getContactInformation().collect { storedContactInformation ->
+                contactInformation = storedContactInformation
             }
         }
     }
@@ -56,14 +50,14 @@ class CompanyInformationViewModel(application: Application, private val savedSta
     fun updateCompanyName(newCompanyName: String) {
         companyName = newCompanyName
         viewModelScope.launch {
-            dataStoreManager.saveString(DataStoreManager.COMPANY_NAME, newCompanyName)
+            dataStoreRepository.saveCompanyName(newCompanyName)
         }
     }
 
     fun updateContactInformation(newContactInformation: String) {
         contactInformation = newContactInformation
         viewModelScope.launch {
-            dataStoreManager.saveString(DataStoreManager.CONTACT_INFORMATION, contactInformation)
+            dataStoreRepository.saveContactInformation(newContactInformation)
         }
     }
 

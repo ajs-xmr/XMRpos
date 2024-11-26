@@ -8,15 +8,20 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.monerokon.xmrpos.data.DataStoreManager
+import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.ui.NavGraphRoot
 import org.monerokon.xmrpos.ui.security.PinProtectScreenRoot
 import org.monerokon.xmrpos.ui.theme.XMRposTheme
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private lateinit var dataStoreManager: DataStoreManager
+    @Inject
+    lateinit var dataStoreRepository: DataStoreRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -28,15 +33,12 @@ class MainActivity : ComponentActivity() {
 
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
 
-        dataStoreManager = DataStoreManager(applicationContext)
-
-
         lifecycleScope.launch {
-            val requirePinCodeOnAppStart = dataStoreManager.getBoolean(DataStoreManager.REQUIRE_PIN_CODE_ON_APP_START).first()
-            val pinCodeOnAppStart = dataStoreManager.getString(DataStoreManager.PIN_CODE_ON_APP_START).first()
+            val requirePinCodeOnAppStart = dataStoreRepository.getRequirePinCodeOnAppStart().first()
+            val pinCodeOnAppStart = dataStoreRepository.getPinCodeOnAppStart().first()
             setContent {
                 XMRposTheme {
-                    if (requirePinCodeOnAppStart == true && pinCodeOnAppStart != null) {
+                    if (requirePinCodeOnAppStart == true) {
                         PinProtectScreenRoot(protectedScreen = {NavGraphRoot()}, pinCode = pinCodeOnAppStart)
                     } else {
                         NavGraphRoot()
