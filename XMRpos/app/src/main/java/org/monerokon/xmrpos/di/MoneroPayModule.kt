@@ -6,9 +6,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import org.monerokon.xmrpos.data.local.datastore.DataStoreLocalDataSource
 import org.monerokon.xmrpos.data.remote.moneroPay.MoneroPayApi
 import org.monerokon.xmrpos.data.remote.moneroPay.MoneroPayRemoteDataSource
+import org.monerokon.xmrpos.data.remote.moneroPayCallback.MoneroPayCallbackManager
 import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.data.repository.MoneroPayRepository
 import retrofit2.Retrofit
@@ -23,15 +23,12 @@ object MoneroPayModule {
     @Provides
     @Named("moneroPayRetrofit")
     fun provideMoneroPayRetrofit(dataStoreRepository: DataStoreRepository): Retrofit {
-        // Fetch the base URL from DataStoreRepository
         val baseUrl = runBlocking { dataStoreRepository.getMoneroPayServerAddress().first() }
-
         return Retrofit.Builder()
-            .baseUrl(baseUrl)  // Use the dynamic base URL from DataStoreRepository
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
-
 
     @Provides
     fun provideMoneroPayApi(@Named("moneroPayRetrofit") moneroPayRetrofit: Retrofit): MoneroPayApi {
@@ -42,8 +39,14 @@ object MoneroPayModule {
     @Singleton
     fun provideMoneroPayRepository(
         moneroPayRemoteDataSource: MoneroPayRemoteDataSource,
-        dataStoreLocalDataSource: DataStoreLocalDataSource
+        callbackManager: MoneroPayCallbackManager
     ): MoneroPayRepository {
-        return MoneroPayRepository(moneroPayRemoteDataSource, dataStoreLocalDataSource)
+        return MoneroPayRepository(moneroPayRemoteDataSource, callbackManager)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMoneroPayCallbackManager(): MoneroPayCallbackManager {
+        return MoneroPayCallbackManager(8080)
     }
 }

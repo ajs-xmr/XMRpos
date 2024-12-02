@@ -1,19 +1,42 @@
 package org.monerokon.xmrpos.data.repository
 
-import org.monerokon.xmrpos.data.local.datastore.DataStoreLocalDataSource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
 import org.monerokon.xmrpos.data.remote.moneroPay.MoneroPayRemoteDataSource
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveResponse
-import javax.inject.Inject
+import org.monerokon.xmrpos.data.remote.moneroPayCallback.MoneroPayCallbackManager
+import org.monerokon.xmrpos.data.remote.moneroPayCallback.model.PaymentCallback
 
-class MoneroPayRepository @Inject constructor(
+class MoneroPayRepository(
     private val moneroPayRemoteDataSource: MoneroPayRemoteDataSource,
-    private val DataStoreLocalDataSource: DataStoreLocalDataSource // Or DataStoreLocalDataSource
+    private val callbackManager: MoneroPayCallbackManager
 ) {
 
-    // make receive request to MoneroPay API
-    suspend fun startReceive(moneroPayReceiveRequest: MoneroPayReceiveRequest): MoneroPayReceiveResponse {
-        return moneroPayRemoteDataSource.startReceive(moneroPayReceiveRequest)
+    private val _paymentStatus = MutableStateFlow<PaymentCallback?>(null)
+    val paymentStatus: StateFlow<PaymentCallback?> = _paymentStatus
+
+    suspend fun startReceive(moneroPayReceiveRequest: MoneroPayReceiveRequest): MoneroPayReceiveResponse? {
+        return withContext(Dispatchers.IO) {
+            val response = moneroPayRemoteDataSource.startReceive(moneroPayReceiveRequest)
+            response?.let {
+                callbackManager.startListening { paymentCallback ->
+                    handlePaymentCallback(paymentCallback)
+                }
+            }
+            response
+        }
     }
 
+    private fun handlePaymentCallback(paymentCallback: PaymentCallback) {
+        if (paymentCallback.amount.expected == paymentCallback.amount.covered.total) {
+            _paymentStatus.value = paymentCallback
+        }
+    }
+
+    fun stopReceive() {
+        callbackManager.stopListening()
+    }
 }

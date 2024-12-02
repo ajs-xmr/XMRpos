@@ -1,3 +1,4 @@
+// PaymentCheckoutViewModel.kt
 package org.monerokon.xmrpos.ui.payment
 
 import android.graphics.Bitmap
@@ -12,7 +13,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.monerokon.xmrpos.data.MoneroPayCallbackServer
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
 import org.monerokon.xmrpos.data.repository.ExchangeRateRepository
 import org.monerokon.xmrpos.data.repository.MoneroPayRepository
@@ -51,6 +51,7 @@ class PaymentCheckoutViewModel @Inject constructor(
 
     init {
         fetchExchangeRates()
+        observePaymentStatus()
     }
 
     fun updatePaymentValue(value: Double) {
@@ -93,19 +94,8 @@ class PaymentCheckoutViewModel @Inject constructor(
             if (response != null) {
                 address = response.address
                 qrCodeUri = "monero:${response.address}?tx_amount=${response.amount}&tx_description=${response.description}"
-                startReceiveStatusCheck()
             } else {
                 errorMessage = "MoneroPay server is not responding"
-            }
-
-        }
-    }
-
-    private fun startReceiveStatusCheck() {
-        MoneroPayCallbackServer.getInstance(8080) { paymentCallback ->
-            if (paymentCallback.amount.expected == paymentCallback.amount.covered.total) {
-                println("Payment received!")
-                navigateToPaymentSuccess(PaymentSuccess(11.5, "USD", 0.33))
             }
         }
     }
@@ -115,6 +105,18 @@ class PaymentCheckoutViewModel @Inject constructor(
             .flatMap { it.inetAddresses.toList() }
             .firstOrNull { it.isSiteLocalAddress }
             ?.hostAddress
+    }
+
+    private fun observePaymentStatus() {
+        viewModelScope.launch {
+            moneroPayRepository.paymentStatus.collect { paymentCallback ->
+                paymentCallback?.let {
+                    if (it.amount.expected == it.amount.covered.total) {
+                        navigateToPaymentSuccess(PaymentSuccess(it.amount.covered.total / 1000000000000.0, "XMR", it.amount.covered.total / 1000000000000.0))
+                    }
+                }
+            }
+        }
     }
 
     fun navigateToPaymentSuccess(paymentSuccess: PaymentSuccess) {
@@ -138,6 +140,6 @@ class PaymentCheckoutViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        MoneroPayCallbackServer.stopServer()
+        moneroPayRepository.stopReceive()
     }
 }
