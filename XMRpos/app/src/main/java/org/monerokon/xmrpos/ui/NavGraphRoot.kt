@@ -31,6 +31,8 @@ import org.monerokon.xmrpos.ui.payment.PaymentSuccessScreenRoot
 import org.monerokon.xmrpos.ui.payment.PaymentSuccessViewModel
 import org.monerokon.xmrpos.ui.settings.companyinformation.CompanyInformationScreenRoot
 import org.monerokon.xmrpos.ui.settings.companyinformation.CompanyInformationViewModel
+import org.monerokon.xmrpos.ui.settings.exporttransactions.ExportTransactionsScreenRoot
+import org.monerokon.xmrpos.ui.settings.exporttransactions.ExportTransactionsViewModel
 import org.monerokon.xmrpos.ui.settings.fiatcurrencies.FiatCurrenciesScreenRoot
 import org.monerokon.xmrpos.ui.settings.fiatcurrencies.FiatCurrenciesViewModel
 import org.monerokon.xmrpos.ui.settings.main.MainSettingsScreenRoot
@@ -91,8 +93,8 @@ fun NavGraphRoot(
                     SecurityScreenRoot(viewModel = securityViewModel, navController = navController)
                 }
                 composable<ExportTransactions> {
-                    //val exportTransactionsViewModel: ExportTransactionsViewModel = viewModel()
-                    //ExportTransactionsScreenRoot(viewModel = exportTransactionsViewModel, navController = navController)
+                    val exportTransactionsViewModel: ExportTransactionsViewModel = hiltViewModel()
+                    ExportTransactionsScreenRoot(viewModel = exportTransactionsViewModel, navController = navController)
                 }
                 composable<MoneroPay> {
                     val moneroPayViewModel: MoneroPayViewModel = hiltViewModel()

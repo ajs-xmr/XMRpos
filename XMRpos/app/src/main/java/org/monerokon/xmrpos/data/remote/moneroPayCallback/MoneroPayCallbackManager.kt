@@ -5,7 +5,7 @@ import org.monerokon.xmrpos.data.remote.moneroPayCallback.model.PaymentCallback
 class MoneroPayCallbackManager(private val port: Int) {
     private var callbackServer: MoneroPayCallbackServer? = null
 
-    fun startListening(onPaymentReceived: (PaymentCallback) -> Unit) {
+    fun startListening(onPaymentReceived: (PaymentCallback, Double) -> Unit) {
         if (callbackServer == null) {
             callbackServer = MoneroPayCallbackServer(port, onPaymentReceived)
         }

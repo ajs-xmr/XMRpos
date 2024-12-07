@@ -8,7 +8,7 @@ import org.monerokon.xmrpos.data.remote.moneroPayCallback.model.PaymentCallback
 
 class MoneroPayCallbackServer(
     port: Int,
-    private val onPaymentReceived: (PaymentCallback) -> Unit
+    private val onPaymentReceived: (PaymentCallback, Double) -> Unit
 ) : NanoHTTPD(port) {
 
     init {
@@ -21,18 +21,23 @@ class MoneroPayCallbackServer(
             session.parseBody(bodyData)
             val callbackData = bodyData["postData"] ?: return newFixedLengthResponse("No callback data")
 
-            processPaymentEvent(callbackData)
+            // parse the fiatValue from the request parameters
+            val fiatValue = session.parms["fiatValue"]?.toDoubleOrNull() ?: 0.0
+
+            processPaymentEvent(callbackData, fiatValue)
             return newFixedLengthResponse("Callback processed successfully")
         } else {
             return newFixedLengthResponse("Invalid request method")
         }
     }
 
-    private fun processPaymentEvent(data: String) {
+    private fun processPaymentEvent(data: String, fiatValue: Double) {
         try {
-            val paymentCallback = Json.decodeFromString<PaymentCallback>(data)
+
+            var paymentCallback = Json.decodeFromString<PaymentCallback>(data)
+
             Handler(Looper.getMainLooper()).post {
-                onPaymentReceived(paymentCallback)
+                onPaymentReceived(paymentCallback, fiatValue)
             }
         } catch (e: Exception) {
             println("Failed to process callback: ${e.message}")

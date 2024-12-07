@@ -11,6 +11,7 @@ import org.monerokon.xmrpos.data.remote.moneroPay.MoneroPayRemoteDataSource
 import org.monerokon.xmrpos.data.remote.moneroPayCallback.MoneroPayCallbackManager
 import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.data.repository.MoneroPayRepository
+import org.monerokon.xmrpos.data.repository.TransactionRepository
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Named
@@ -39,9 +40,10 @@ object MoneroPayModule {
     @Singleton
     fun provideMoneroPayRepository(
         moneroPayRemoteDataSource: MoneroPayRemoteDataSource,
-        callbackManager: MoneroPayCallbackManager
+        callbackManager: MoneroPayCallbackManager,
+        transactionRepository: TransactionRepository
     ): MoneroPayRepository {
-        return MoneroPayRepository(moneroPayRemoteDataSource, callbackManager)
+        return MoneroPayRepository(moneroPayRemoteDataSource, callbackManager, transactionRepository)
     }
 
     @Provides

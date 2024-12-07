@@ -8,5 +8,5 @@ data class PaymentCallback(
     val complete: Boolean,
     val description: String,
     val created_at: String,
-    val transaction: PaymentCallbackTransaction
+    val transaction: PaymentCallbackTransaction,
 )

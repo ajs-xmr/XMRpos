@@ -84,7 +84,7 @@ class PaymentCheckoutViewModel @Inject constructor(
     private fun startMoneroPayReceive() {
         val ipAddress = getDeviceIpAddress()
         val moneroPayReceiveRequest = MoneroPayReceiveRequest(
-            (targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080"
+            (targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080?fiatValue=$paymentValue"
         )
         viewModelScope.launch(Dispatchers.IO) {
             val response = moneroPayRepository.startReceive(moneroPayReceiveRequest)
