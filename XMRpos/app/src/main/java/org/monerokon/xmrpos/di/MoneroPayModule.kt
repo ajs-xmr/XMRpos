@@ -41,9 +41,10 @@ object MoneroPayModule {
     fun provideMoneroPayRepository(
         moneroPayRemoteDataSource: MoneroPayRemoteDataSource,
         callbackManager: MoneroPayCallbackManager,
-        transactionRepository: TransactionRepository
+        transactionRepository: TransactionRepository,
+        dataStoreRepository: DataStoreRepository
     ): MoneroPayRepository {
-        return MoneroPayRepository(moneroPayRemoteDataSource, callbackManager, transactionRepository)
+        return MoneroPayRepository(moneroPayRemoteDataSource, callbackManager, transactionRepository, dataStoreRepository)
     }
 
     @Provides

@@ -20,6 +20,7 @@ import org.monerokon.xmrpos.ui.PaymentEntry
 import org.monerokon.xmrpos.ui.PaymentSuccess
 import java.net.NetworkInterface
 import java.util.Hashtable
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -83,8 +84,9 @@ class PaymentCheckoutViewModel @Inject constructor(
 
     private fun startMoneroPayReceive() {
         val ipAddress = getDeviceIpAddress()
+        val callbackUUID = UUID.randomUUID().toString()
         val moneroPayReceiveRequest = MoneroPayReceiveRequest(
-            (targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080?fiatValue=$paymentValue"
+            (targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080?fiatValue=$paymentValue&callbackUUID=$callbackUUID"
         )
         viewModelScope.launch(Dispatchers.IO) {
             val response = moneroPayRepository.startReceive(moneroPayReceiveRequest)
@@ -92,6 +94,8 @@ class PaymentCheckoutViewModel @Inject constructor(
             println("MoneroPay: $response")
 
             if (response != null) {
+                moneroPayRepository.updateCurrentCallbackUUID(callbackUUID);
+
                 address = response.address
                 qrCodeUri = "monero:${response.address}?tx_amount=${response.amount}&tx_description=${response.description}"
             } else {
@@ -111,9 +115,14 @@ class PaymentCheckoutViewModel @Inject constructor(
         viewModelScope.launch {
             moneroPayRepository.paymentStatus.collect { paymentCallback ->
                 paymentCallback?.let {
-                    if (it.amount.expected == it.amount.covered.total) {
-                        navigateToPaymentSuccess(PaymentSuccess(it.amount.covered.total / 1000000000000.0, "XMR", it.amount.covered.total / 1000000000000.0))
-                    }
+                    navigateToPaymentSuccess(PaymentSuccess(
+                        fiatAmount = paymentValue,
+                        primaryFiatCurrency = primaryFiatCurrency,
+                        txId = it.transaction.tx_hash,
+                        xmrAmount = it.amount.covered.total / 1000000000000.0,
+                        exchangeRate = exchangeRates?.get(primaryFiatCurrency) ?: 0.0,
+                        timestamp = it.transaction.timestamp
+                    ))
                 }
             }
         }
