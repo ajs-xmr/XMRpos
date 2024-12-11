@@ -13,18 +13,33 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import org.monerokon.xmrpos.ui.PaymentSuccess
 
 @Composable
-fun PaymentSuccessScreenRoot(viewModel: PaymentSuccessViewModel, navController: NavHostController) {
+fun PaymentSuccessScreenRoot(viewModel: PaymentSuccessViewModel, navController: NavHostController, fiatAmount: Double, primaryFiatCurrency: String, txId: String, xmrAmount: Double, exchangeRate: Double, timestamp: String) {
     viewModel.setNavController(navController)
     PaymentSuccessScreen(
         navigateToEntry = viewModel::navigateToEntry,
+        printReceipt = viewModel::printReceipt,
+        fiatAmount = fiatAmount,
+        primaryFiatCurrency = primaryFiatCurrency,
+        txId = txId,
+        xmrAmount = xmrAmount,
+        exchangeRate = exchangeRate,
+        timestamp = timestamp
     )
 }
 
 @Composable
 fun PaymentSuccessScreen(
     navigateToEntry: () -> Unit,
+    printReceipt: (PaymentSuccess) -> Unit,
+    fiatAmount: Double,
+    primaryFiatCurrency: String,
+    txId: String,
+    xmrAmount: Double,
+    exchangeRate: Double,
+    timestamp: String
 ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column (
@@ -53,7 +68,14 @@ fun PaymentSuccessScreen(
             )
             Spacer(modifier = Modifier.height(32.dp))
             FilledTonalButton(
-                onClick = {}
+                onClick = {printReceipt(PaymentSuccess(
+                    fiatAmount = fiatAmount,
+                    primaryFiatCurrency = primaryFiatCurrency,
+                    txId = txId,
+                    xmrAmount = xmrAmount,
+                    exchangeRate = exchangeRate,
+                    timestamp = timestamp
+                ))}
             ) {Text("Print receipt")}
             Spacer(modifier = Modifier.height(32.dp))
             Button(

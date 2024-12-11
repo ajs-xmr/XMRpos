@@ -30,4 +30,7 @@
             </intent-filter>
         </activity>
     </application>
+    <queries>
+        <package android:name="net.nyx.printerservice"/>
+    </queries>
 </manifest>

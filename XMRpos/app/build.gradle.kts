@@ -31,6 +31,13 @@ android {
             )
         }
     }
+
+    sourceSets {
+        getByName("main") {
+            aidl.srcDirs("src/main/aidl")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
@@ -40,7 +47,9 @@ android {
     }
     buildFeatures {
         compose = true
+        aidl = true
     }
+
 }
 
 dependencies {

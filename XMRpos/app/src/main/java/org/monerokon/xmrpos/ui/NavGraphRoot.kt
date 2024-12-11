@@ -73,8 +73,9 @@ fun NavGraphRoot(
                     PaymentCheckoutScreenRoot(viewModel = paymentCheckoutViewModel, navController = navController, fiatAmount = args.fiatAmount, primaryFiatCurrency = args.primaryFiatCurrency)
                 }
                 composable<PaymentSuccess> {
-                    val paymentSuccessViewModel: PaymentSuccessViewModel = viewModel()
-                    PaymentSuccessScreenRoot(viewModel = paymentSuccessViewModel, navController = navController)
+                    val args = it.toRoute<PaymentSuccess>()
+                    val paymentSuccessViewModel: PaymentSuccessViewModel = hiltViewModel()
+                    PaymentSuccessScreenRoot(viewModel = paymentSuccessViewModel, navController = navController, fiatAmount = args.fiatAmount, primaryFiatCurrency = args.primaryFiatCurrency, txId = args.txId, xmrAmount = args.xmrAmount, exchangeRate = args.exchangeRate, timestamp = args.timestamp)
                 }
                 composable<Settings> {
                     val mainSettingsViewModel: MainSettingsViewModel = viewModel()
@@ -119,7 +120,10 @@ data class PaymentCheckout(
 data class PaymentSuccess(
     val fiatAmount: Double,
     val primaryFiatCurrency: String,
+    val txId: String,
     val xmrAmount: Double,
+    val exchangeRate: Double,
+    val timestamp: String,
 )
 
 // Settings routes
