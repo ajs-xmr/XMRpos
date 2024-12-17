@@ -155,7 +155,6 @@ fun OpenSettingsDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    println("currentPinCode: $currentPinCode; pinCode: $pinCode")
                     if (currentPinCode == pinCode) {
                         onConfirmation()
                     }

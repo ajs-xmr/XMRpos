@@ -2,6 +2,7 @@ package org.monerokon.xmrpos.data.remote.moneroPayCallback
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.serialization.json.Json
 import org.monerokon.xmrpos.data.remote.moneroPayCallback.model.PaymentCallback
@@ -10,6 +11,8 @@ class MoneroPayCallbackServer(
     port: Int,
     private val onPaymentReceived: (PaymentCallback, Double, String) -> Unit
 ) : NanoHTTPD(port) {
+
+    private val logTag = "MoneroPayCallbackServer"
 
     init {
         start(SOCKET_READ_TIMEOUT, false)
@@ -43,7 +46,7 @@ class MoneroPayCallbackServer(
                 onPaymentReceived(paymentCallback, fiatValue, callbackUUID)
             }
         } catch (e: Exception) {
-            println("Failed to process callback: ${e.message}")
+            Log.i(logTag, "Failed to process callback: ${e.message}")
         }
     }
 

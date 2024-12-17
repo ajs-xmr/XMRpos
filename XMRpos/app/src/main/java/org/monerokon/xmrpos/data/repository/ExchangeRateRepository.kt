@@ -1,5 +1,6 @@
 package org.monerokon.xmrpos.data.repository
 
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.monerokon.xmrpos.data.local.datastore.DataStoreLocalDataSource
@@ -12,11 +13,13 @@ class ExchangeRateRepository @Inject constructor(
     private val dataStoreLocalDataSource: DataStoreLocalDataSource // Or DataStoreLocalDataSource
 ) {
 
+    private val logTag = "ExchangeRateRepository"
+
     // Fetch exchange rates using base currency from DataStore
     fun fetchPrimaryExchangeRate(): Flow<Result<ExchangeRateResponse>> {
         return dataStoreLocalDataSource.getPrimaryFiatCurrency().map { primaryFiatCurrency ->
             runCatching {
-                println("Fetching exchange rates for primary fiat currency: $primaryFiatCurrency")
+                Log.i(logTag, "Fetching exchange rates for primary fiat currency: $primaryFiatCurrency")
                 exchangeRateRemoteDataSource.fetchExchangeRates("XMR",
                     listOf(primaryFiatCurrency)
                 )
@@ -27,7 +30,7 @@ class ExchangeRateRepository @Inject constructor(
     fun fetchReferenceExchangeRates(): Flow<Result<ExchangeRateResponse>> {
         return dataStoreLocalDataSource.getReferenceFiatCurrencies().map { referenceFiatCurrencies ->
             runCatching {
-                println("Fetching exchange rates for reference fiat currency: $referenceFiatCurrencies")
+                Log.i(logTag, "Fetching exchange rates for reference fiat currency: $referenceFiatCurrencies")
                 exchangeRateRemoteDataSource.fetchExchangeRates("XMR",
                     referenceFiatCurrencies
                 )
@@ -39,7 +42,7 @@ class ExchangeRateRepository @Inject constructor(
     fun fetchExchangeRates(): Flow<Result<ExchangeRateResponse>> {
         return dataStoreLocalDataSource.getFiatCurrencies().map { fiatCurrencies ->
             runCatching {
-                println("Fetching exchange rates for primary and reference fiat currency: $fiatCurrencies")
+                Log.i(logTag, "Fetching exchange rates for primary and reference fiat currency: $fiatCurrencies")
                 exchangeRateRemoteDataSource.fetchExchangeRates("XMR",
                     fiatCurrencies
                 )

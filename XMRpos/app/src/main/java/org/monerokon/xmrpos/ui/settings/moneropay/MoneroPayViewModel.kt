@@ -1,5 +1,6 @@
 package org.monerokon.xmrpos.ui.settings.moneropay
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,6 +17,8 @@ import javax.inject.Inject
 class MoneroPayViewModel @Inject constructor(
     private val dataStoreRepository: DataStoreRepository,
 ) : ViewModel() {
+
+    private val logTag = "MoneroPayViewModel"
 
     private var navController: NavHostController? = null
 
@@ -40,25 +43,25 @@ class MoneroPayViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             dataStoreRepository.getMoneroPayServerAddress().collect { storedMoneroPayServerAddress ->
-                println("storedMoneroPayServerAddress: $storedMoneroPayServerAddress")
+                Log.i(logTag, "storedMoneroPayServerAddress: $storedMoneroPayServerAddress")
                 serverAddress = storedMoneroPayServerAddress
             }
         }
         viewModelScope.launch {
             dataStoreRepository.getMoneroPayUseCallbacks().collect { storedMoneroPayUseCallbacks ->
-                println("storedMoneroPayUseCallbacks: $storedMoneroPayUseCallbacks")
+                Log.i(logTag, "storedMoneroPayUseCallbacks: $storedMoneroPayUseCallbacks")
                 useCallbacks = storedMoneroPayUseCallbacks
             }
         }
         viewModelScope.launch {
             dataStoreRepository.getMoneroPayConfValue().collect { storedConfValue ->
-                println("storedConfValue: $storedConfValue")
+                Log.i(logTag, "storedConfValue: $storedConfValue")
                 conf = storedConfValue
             }
         }
         viewModelScope.launch {
             dataStoreRepository.getMoneroPayRefreshInterval().collect { storedRefreshInterval ->
-                println("storedRefreshInterval: $storedRefreshInterval")
+                Log.i(logTag, "storedRefreshInterval: $storedRefreshInterval")
                 refreshInterval = storedRefreshInterval.toString()
             }
         }

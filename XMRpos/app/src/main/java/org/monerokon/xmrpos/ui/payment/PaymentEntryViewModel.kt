@@ -1,6 +1,7 @@
 // PaymentEntryViewModel.kt
 package org.monerokon.xmrpos.ui.payment
 
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,6 +20,8 @@ class PaymentEntryViewModel @Inject constructor(
     private val exchangeRateRepository: ExchangeRateRepository,
     private val dataStoreRepository: DataStoreRepository,
 ) : ViewModel() {
+
+    private val logTag = "PaymentEntryViewModel"
 
     private var navController: NavHostController? = null
 
@@ -99,7 +102,7 @@ class PaymentEntryViewModel @Inject constructor(
     }
 
     fun submit() {
-        println("Going to next screen!")
+        Log.i(logTag, "Going to next screen!")
         if (paymentValue.toDouble() == 0.0) {
             return
         }
@@ -107,7 +110,7 @@ class PaymentEntryViewModel @Inject constructor(
     }
 
     fun tryOpenSettings() {
-        println("open settings")
+        Log.i(logTag, "open settings")
         if (requirePinCodeOpenSettings && pinCodeOpenSettings != "") {
             openSettingsPinCodeDialog = true
         } else {

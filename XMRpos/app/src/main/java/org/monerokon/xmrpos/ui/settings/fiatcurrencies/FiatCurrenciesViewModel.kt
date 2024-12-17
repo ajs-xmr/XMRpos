@@ -1,5 +1,6 @@
 package org.monerokon.xmrpos.ui.settings.fiatcurrencies
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,6 +17,8 @@ import javax.inject.Inject
 class FiatCurrenciesViewModel @Inject constructor(
     private val dataStoreRepository: DataStoreRepository,
 ) : ViewModel() {
+
+    private val logTag = "FiatCurrenciesViewModel"
 
     val fiatOptions = listOf("USD", "EUR", "CZK", "MXN")
 
@@ -36,13 +39,13 @@ class FiatCurrenciesViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             dataStoreRepository.getPrimaryFiatCurrency().collect { storedPrimaryFiatCurrency ->
-                println("primaryFiatCurrency: $storedPrimaryFiatCurrency")
+                Log.i(logTag, "primaryFiatCurrency: $storedPrimaryFiatCurrency")
                 primaryFiatCurrency = storedPrimaryFiatCurrency
             }
         }
         viewModelScope.launch {
             dataStoreRepository.getReferenceFiatCurrencies().collect { storedReferenceFiatCurrencies ->
-                println("storedContactInformation: $storedReferenceFiatCurrencies")
+                Log.i(logTag, "storedContactInformation: $storedReferenceFiatCurrencies")
                 referenceFiatCurrencies = storedReferenceFiatCurrencies
             }
         }

@@ -2,6 +2,7 @@
 package org.monerokon.xmrpos.ui.payment
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -30,6 +31,8 @@ class PaymentCheckoutViewModel @Inject constructor(
     private val moneroPayRepository: MoneroPayRepository,
     private val hceRepository: HceRepository,
 ) : ViewModel() {
+
+    private val logTag = "PaymentCheckoutViewModel"
 
     private var navController: NavHostController? = null
 
@@ -78,8 +81,8 @@ class PaymentCheckoutViewModel @Inject constructor(
             exchangeRates = exchangeRatesResponse.getOrNull()
 
             targetXMRvalue = paymentValue / (exchangeRates?.get(primaryFiatCurrency) ?: 0.0)
-            println("Reference exchange rates: $referenceFiatCurrencies")
-            println("Exchange rates: $exchangeRates")
+            Log.i(logTag, "Reference exchange rates: $referenceFiatCurrencies")
+            Log.i(logTag, "Exchange rates: $exchangeRates")
 
             startMoneroPayReceive()
         }
@@ -94,7 +97,7 @@ class PaymentCheckoutViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val response = moneroPayRepository.startReceive(moneroPayReceiveRequest)
 
-            println("MoneroPay: $response")
+            Log.i(logTag, "MoneroPay: $response")
 
             if (response != null) {
                 moneroPayRepository.updateCurrentCallbackUUID(callbackUUID);
