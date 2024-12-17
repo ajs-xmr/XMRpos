@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
 import org.monerokon.xmrpos.data.repository.ExchangeRateRepository
+import org.monerokon.xmrpos.data.repository.HceRepository
 import org.monerokon.xmrpos.data.repository.MoneroPayRepository
 import org.monerokon.xmrpos.ui.PaymentEntry
 import org.monerokon.xmrpos.ui.PaymentSuccess
@@ -27,6 +28,7 @@ import javax.inject.Inject
 class PaymentCheckoutViewModel @Inject constructor(
     private val exchangeRateRepository: ExchangeRateRepository,
     private val moneroPayRepository: MoneroPayRepository,
+    private val hceRepository: HceRepository,
 ) : ViewModel() {
 
     private var navController: NavHostController? = null
@@ -36,6 +38,7 @@ class PaymentCheckoutViewModel @Inject constructor(
     }
 
     fun navigateBack() {
+        stopReceive()
         navController?.navigate(PaymentEntry)
     }
 
@@ -97,7 +100,9 @@ class PaymentCheckoutViewModel @Inject constructor(
                 moneroPayRepository.updateCurrentCallbackUUID(callbackUUID);
 
                 address = response.address
-                qrCodeUri = "monero:${response.address}?tx_amount=${response.amount}&tx_description=${response.description}"
+                qrCodeUri = "monero:${response.address}?tx_amount=${targetXMRvalue}&tx_description=${response.description}"
+
+                hceRepository.updateUri(qrCodeUri)
             } else {
                 errorMessage = "MoneroPay server is not responding"
             }
@@ -115,6 +120,7 @@ class PaymentCheckoutViewModel @Inject constructor(
         viewModelScope.launch {
             moneroPayRepository.paymentStatus.collect { paymentCallback ->
                 paymentCallback?.let {
+                    stopReceive()
                     navigateToPaymentSuccess(PaymentSuccess(
                         fiatAmount = paymentValue,
                         primaryFiatCurrency = primaryFiatCurrency,
@@ -147,8 +153,13 @@ class PaymentCheckoutViewModel @Inject constructor(
         }
     }
 
+    fun stopReceive() {
+        hceRepository.updateUri("")
+        moneroPayRepository.stopReceive()
+    }
+
     override fun onCleared() {
         super.onCleared()
-        moneroPayRepository.stopReceive()
+        stopReceive()
     }
 }
