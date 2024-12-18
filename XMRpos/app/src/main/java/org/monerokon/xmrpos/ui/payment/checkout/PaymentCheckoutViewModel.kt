@@ -1,5 +1,5 @@
 // PaymentCheckoutViewModel.kt
-package org.monerokon.xmrpos.ui.payment
+package org.monerokon.xmrpos.ui.payment.checkout
 
 import android.graphics.Bitmap
 import android.util.Log

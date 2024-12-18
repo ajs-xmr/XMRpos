@@ -1,5 +1,5 @@
 // PaymentSuccessViewModel.kt
-package org.monerokon.xmrpos.ui.payment
+package org.monerokon.xmrpos.ui.payment.success
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

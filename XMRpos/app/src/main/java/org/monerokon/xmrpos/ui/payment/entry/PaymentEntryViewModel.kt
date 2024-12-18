@@ -1,5 +1,5 @@
 // PaymentEntryViewModel.kt
-package org.monerokon.xmrpos.ui.payment
+package org.monerokon.xmrpos.ui.payment.entry
 
 import android.util.Log
 import androidx.compose.runtime.*

@@ -1,5 +1,5 @@
 // PaymentSuccessScreen.kt
-package org.monerokon.xmrpos.ui.payment
+package org.monerokon.xmrpos.ui.payment.success
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

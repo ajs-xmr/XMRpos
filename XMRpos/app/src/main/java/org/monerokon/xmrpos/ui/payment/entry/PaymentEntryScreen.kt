@@ -1,5 +1,5 @@
 // PaymentEntryScreen.kt
-package org.monerokon.xmrpos.ui.payment
+package org.monerokon.xmrpos.ui.payment.entry
 
 import CurrencyConverterCard
 import androidx.compose.foundation.layout.*

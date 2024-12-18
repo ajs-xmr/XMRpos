@@ -1,4 +1,4 @@
-package org.monerokon.xmrpos.ui.payment
+package org.monerokon.xmrpos.ui.payment.checkout
 
 import CurrencyConverterCard
 import android.graphics.Bitmap
@@ -21,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.monerokon.xmrpos.R
+import org.monerokon.xmrpos.ui.PaymentSuccess
 
 @Composable
 fun PaymentCheckoutScreenRoot(viewModel: PaymentCheckoutViewModel, navController: NavHostController, fiatAmount: Double, primaryFiatCurrency: String) {
@@ -36,7 +37,8 @@ fun PaymentCheckoutScreenRoot(viewModel: PaymentCheckoutViewModel, navController
         qrCodeUri = viewModel.qrCodeUri,
         generateQRCode = viewModel::generateQRCode,
         navigateBack = viewModel::navigateBack,
-        errorMessage = viewModel.errorMessage
+        errorMessage = viewModel.errorMessage,
+        navigateToPaymentSuccess = viewModel::navigateToPaymentSuccess
     )
 }
 
@@ -50,7 +52,8 @@ fun PaymentCheckoutScreen(
     qrCodeUri: String,
     generateQRCode: (String, Int, Int, Int, Int, Int) -> Bitmap,
     navigateBack: () -> Unit,
-    errorMessage: String
+    errorMessage: String,
+    navigateToPaymentSuccess: (PaymentSuccess) -> Unit
 ) {
     val openAlertDialog = remember { mutableStateOf(false) }
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -93,6 +96,7 @@ fun PaymentCheckoutScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 CircularProgressIndicator()
             }
+            Button(onClick = { navigateToPaymentSuccess(PaymentSuccess(1.0, "USD", "3980039jh0d2980j93e02j9e82u98j3d0928jd2398g", 0.0432945853, 210.03, "2024-12-18T13:22:44")) }) { }
             when {
                 openAlertDialog.value -> {
                     AlertDialog(
