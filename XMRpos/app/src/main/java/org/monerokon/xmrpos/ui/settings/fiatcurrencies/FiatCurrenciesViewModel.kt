@@ -20,7 +20,14 @@ class FiatCurrenciesViewModel @Inject constructor(
 
     private val logTag = "FiatCurrenciesViewModel"
 
-    val fiatOptions = listOf("USD", "EUR", "CZK", "MXN")
+    // TODO: Add more fiat currencies after confirming they are supported by the exchange rate API
+    val fiatOptions = listOf(
+        "ARS", "AUD", "BRL", "CAD",
+        "CLP", "CZK", "EUR", "GBP", "GEL", "HUF", "IDR", "INR", "KRW",
+        "MXN", "MYR",
+        "NGN", "NOK", "NZD", "PEN", "PHP", "PLN", "RON", "RUB",
+        "SEK", "SGD", "ZMW"
+    )
 
     private var navController: NavHostController? = null
 
