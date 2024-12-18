@@ -96,7 +96,6 @@ fun PaymentCheckoutScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 CircularProgressIndicator()
             }
-            Button(onClick = { navigateToPaymentSuccess(PaymentSuccess(1.0, "USD", "3980039jh0d2980j93e02j9e82u98j3d0928jd2398g", 0.0432945853, 210.03, "2024-12-18T13:22:44")) }) { }
             when {
                 openAlertDialog.value -> {
                     AlertDialog(
