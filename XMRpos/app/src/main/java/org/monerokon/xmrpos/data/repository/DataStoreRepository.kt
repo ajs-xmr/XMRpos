@@ -102,14 +102,6 @@ class DataStoreRepository @Inject constructor(
         dataStoreLocalDataSource.saveMoneroPayServerAddress(moneroPayServerAddress)
     }
 
-    fun getMoneroPayUseCallbacks(): Flow<Boolean> {
-        return dataStoreLocalDataSource.getMoneroPayUseCallbacks()
-    }
-
-    suspend fun saveMoneroPayUseCallbacks(moneroPayUseCallbacks: Boolean) {
-        dataStoreLocalDataSource.saveMoneroPayUseCallbacks(moneroPayUseCallbacks)
-    }
-
     fun getMoneroPayRefreshInterval(): Flow<Int> {
         return dataStoreLocalDataSource.getMoneroPayRefreshInterval()
     }

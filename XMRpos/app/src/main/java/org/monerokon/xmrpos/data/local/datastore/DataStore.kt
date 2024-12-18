@@ -24,5 +24,4 @@ val PIN_CODE_ON_APP_START: Preferences.Key<String> = stringPreferencesKey("pin_c
 val PIN_CODE_OPEN_SETTINGS: Preferences.Key<String> = stringPreferencesKey("pin_code_open_settings")
 val MONERO_PAY_CONF_VALUE: Preferences.Key<String> = stringPreferencesKey("monero_pay_conf_value")
 val MONERO_PAY_SERVER_ADDRESS: Preferences.Key<String> = stringPreferencesKey("monero_pay_server_address")
-val MONERO_PAY_USE_CALLBACKS: Preferences.Key<Boolean> = booleanPreferencesKey("monero_pay_use_callbacks")
 val MONERO_PAY_REFRESH_INTERVAL: Preferences.Key<Int> = intPreferencesKey("monero_pay_refresh_interval")

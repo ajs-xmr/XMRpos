@@ -5,7 +5,6 @@ import CONTACT_INFORMATION
 import MONERO_PAY_CONF_VALUE
 import MONERO_PAY_REFRESH_INTERVAL
 import MONERO_PAY_SERVER_ADDRESS
-import MONERO_PAY_USE_CALLBACKS
 import PIN_CODE_ON_APP_START
 import PIN_CODE_OPEN_SETTINGS
 import PRIMARY_FIAT_CURRENCY
@@ -175,19 +174,6 @@ class DataStoreLocalDataSource @Inject constructor(
     suspend fun saveMoneroPayServerAddress(moneroPayServerAddress: String) {
         context.dataStore.edit { preferences ->
             preferences[MONERO_PAY_SERVER_ADDRESS] = moneroPayServerAddress
-        }
-    }
-
-    fun getMoneroPayUseCallbacks(): Flow<Boolean> {
-        return context.dataStore.data
-            .map { preferences ->
-                preferences[MONERO_PAY_USE_CALLBACKS] ?: true
-            }
-    }
-
-    suspend fun saveMoneroPayUseCallbacks(moneroPayUseCallbacks: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[MONERO_PAY_USE_CALLBACKS] = moneroPayUseCallbacks
         }
     }
 

@@ -1,36 +1,19 @@
 // MoneroPayScreen.kt
 package org.monerokon.xmrpos.ui.settings.moneropay
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import org.monerokon.xmrpos.ui.settings.companyinformation.CompanyInformationViewModel
-import kotlin.math.exp
 
 @Composable
 fun MoneroPayScreenRoot(viewModel: MoneroPayViewModel, navController: NavHostController) {
@@ -39,11 +22,9 @@ fun MoneroPayScreenRoot(viewModel: MoneroPayViewModel, navController: NavHostCon
         onBackClick = viewModel::navigateToMainSettings,
         confOptions = viewModel.confOptions,
         serverAddress = viewModel.serverAddress,
-        useCallbacks = viewModel.useCallbacks,
         refreshInterval = viewModel.refreshInterval,
         conf = viewModel.conf,
         updateServerAddress = viewModel::updateServerAddress,
-        updateUseCallbacks = viewModel::updateUseCallbacks,
         updateRefreshInterval = viewModel::updateRefreshInterval,
         updateConf = viewModel::updateConf,
     )
@@ -55,11 +36,9 @@ fun MoneroPayScreen(
     onBackClick: () -> Unit,
     confOptions: List<String>,
     serverAddress: String,
-    useCallbacks: Boolean,
     refreshInterval: String,
     conf: String,
     updateServerAddress: (String) -> Unit,
-    updateUseCallbacks: (Boolean) -> Unit,
     updateRefreshInterval: (String) -> Unit,
     updateConf: (String) -> Unit,
 ) {
@@ -103,15 +82,6 @@ fun MoneroPayScreen(
                 FilledTonalButton (onClick = {}) {
                     Text("Test")
                 }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-            Row (
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Use callbacks to this device", style = MaterialTheme.typography.labelLarge)
-                Switch(checked = useCallbacks, onCheckedChange = {updateUseCallbacks(it)})
             }
             Spacer(modifier = Modifier.height(24.dp))
             Row (

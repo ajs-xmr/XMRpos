@@ -34,8 +34,6 @@ class MoneroPayViewModel @Inject constructor(
 
     var serverAddress: String by mutableStateOf("")
 
-    var useCallbacks: Boolean by mutableStateOf(false)
-
     var refreshInterval: String by mutableStateOf("5")
 
     var conf: String by mutableStateOf("")
@@ -45,12 +43,6 @@ class MoneroPayViewModel @Inject constructor(
             dataStoreRepository.getMoneroPayServerAddress().collect { storedMoneroPayServerAddress ->
                 Log.i(logTag, "storedMoneroPayServerAddress: $storedMoneroPayServerAddress")
                 serverAddress = storedMoneroPayServerAddress
-            }
-        }
-        viewModelScope.launch {
-            dataStoreRepository.getMoneroPayUseCallbacks().collect { storedMoneroPayUseCallbacks ->
-                Log.i(logTag, "storedMoneroPayUseCallbacks: $storedMoneroPayUseCallbacks")
-                useCallbacks = storedMoneroPayUseCallbacks
             }
         }
         viewModelScope.launch {
@@ -71,13 +63,6 @@ class MoneroPayViewModel @Inject constructor(
         serverAddress = newServerAddress
         viewModelScope.launch {
             dataStoreRepository.saveMoneroPayServerAddress(newServerAddress)
-        }
-    }
-
-    fun updateUseCallbacks(newUseCallbacks: Boolean) {
-        useCallbacks = newUseCallbacks
-        viewModelScope.launch {
-            dataStoreRepository.saveMoneroPayUseCallbacks(newUseCallbacks)
         }
     }
 
