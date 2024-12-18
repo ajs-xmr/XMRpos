@@ -78,8 +78,8 @@ class DataStoreLocalDataSource @Inject constructor(
     fun getReferenceFiatCurrencies(): Flow<List<String>> {
         return context.dataStore.data
             .map { preferences ->
-                val joinedString: String = preferences[REFERENCE_FIAT_CURRENCIES].toString()
-                if (joinedString.toString() != "") joinedString.split(",") else emptyList()
+                val joinedString: String? = preferences[REFERENCE_FIAT_CURRENCIES]
+                if (joinedString != null && joinedString.toString() != "") joinedString.split(",") else emptyList()
             }
     }
 
@@ -168,7 +168,7 @@ class DataStoreLocalDataSource @Inject constructor(
     fun getMoneroPayServerAddress(): Flow<String> {
         return context.dataStore.data
             .map { preferences ->
-                preferences[MONERO_PAY_SERVER_ADDRESS] ?: "192.168.1.100:5000"
+                preferences[MONERO_PAY_SERVER_ADDRESS] ?: "http://192.168.1.100:5000"
             }
     }
 
