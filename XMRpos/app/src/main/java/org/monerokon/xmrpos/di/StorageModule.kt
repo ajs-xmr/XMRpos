@@ -6,6 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import org.monerokon.xmrpos.data.local.storage.LocalStorageDataSource
 import org.monerokon.xmrpos.data.printer.PrinterServiceManager
 import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.data.repository.PrinterRepository
@@ -14,17 +15,17 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object PrinterModule {
+object StorageModule {
 
     @Provides
     @Singleton
-    fun providePrinterRepository(printerServiceManager: PrinterServiceManager, dataStoreRepository: DataStoreRepository, storageRepository: StorageRepository): PrinterRepository {
-        return PrinterRepository(printerServiceManager, dataStoreRepository, storageRepository)
+    fun provideStorageRepository(localStorageDataSource: LocalStorageDataSource): StorageRepository {
+        return StorageRepository(localStorageDataSource)
     }
 
     @Provides
     @Singleton
-    fun providePrinterServiceManager(@ApplicationContext context: Context): PrinterServiceManager {
-        return PrinterServiceManager(context)
+    fun provideLocalStorageDataSource(@ApplicationContext context: Context): LocalStorageDataSource {
+        return LocalStorageDataSource(context)
     }
 }

@@ -6,33 +6,34 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toFile
 import androidx.navigation.NavHostController
-import org.monerokon.xmrpos.ui.settings.main.MainSettingsViewModel
+import org.monerokon.xmrpos.ui.shared.DisplayImageFromFile
+import java.io.File
 
 @Composable
 fun CompanyInformationScreenRoot(viewModel: CompanyInformationViewModel, navController: NavHostController) {
     viewModel.setNavController(navController)
     CompanyInformationScreen(
         onBackClick = viewModel::navigateToMainSettings,
+        companyLogo = viewModel.companyLogo,
         companyName = viewModel.companyName,
         updateCompanyName = viewModel::updateCompanyName,
         contactInformation = viewModel.contactInformation,
         updateContactInformation = viewModel::updateContactInformation,
-        saveLogo = viewModel::saveLogo
+        saveLogo = viewModel::saveLogo,
+        deleteLogo = viewModel::deleteLogo
     )
 }
 
@@ -40,12 +41,15 @@ fun CompanyInformationScreenRoot(viewModel: CompanyInformationViewModel, navCont
 @Composable
 fun CompanyInformationScreen(
     onBackClick: () -> Unit,
+    companyLogo: File?,
     companyName: String,
     updateCompanyName: (String) -> Unit,
     contactInformation: String,
     updateContactInformation: (String) -> Unit,
     saveLogo: (Uri) -> Unit,
+    deleteLogo: () -> Unit
 ) {
+
     // Registers a photo picker activity launcher in single-select mode.
     val pickMedia = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
         // Callback is invoked after the user selects a media item or closes the
@@ -88,14 +92,23 @@ fun CompanyInformationScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 FilledTonalIconButton (
-                    onClick = { pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))},
+                    onClick = { if (companyLogo == null) {pickMedia.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly))} else {deleteLogo()} },
                     modifier = Modifier.size(100.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Upload company logo",
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
+                    if (companyLogo != null) {
+                        DisplayImageFromFile(companyLogo)
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete company logo",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Upload company logo",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {

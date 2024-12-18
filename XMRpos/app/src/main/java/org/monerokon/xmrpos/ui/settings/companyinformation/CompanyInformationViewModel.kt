@@ -1,6 +1,7 @@
 // CompanyInformationViewModel.kt
 package org.monerokon.xmrpos.ui.settings.companyinformation
 
+import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,14 +10,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import org.monerokon.xmrpos.data.repository.DataStoreRepository
+import org.monerokon.xmrpos.data.repository.StorageRepository
 import org.monerokon.xmrpos.ui.Settings
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class CompanyInformationViewModel @Inject constructor(
     private val dataStoreRepository: DataStoreRepository,
+    private val storageRepository: StorageRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private var navController: NavHostController? = null
@@ -28,6 +34,8 @@ class CompanyInformationViewModel @Inject constructor(
     fun navigateToMainSettings() {
         navController?.navigate(Settings)
     }
+
+    var companyLogo: File? by mutableStateOf(null)
 
     var companyName: String by mutableStateOf("")
 
@@ -45,6 +53,7 @@ class CompanyInformationViewModel @Inject constructor(
                 contactInformation = storedContactInformation
             }
         }
+        companyLogo = storageRepository.readImage("logo.png")
     }
 
     fun updateCompanyName(newCompanyName: String) {
@@ -61,9 +70,15 @@ class CompanyInformationViewModel @Inject constructor(
         }
     }
 
-    // TODO: get image from uri and save it to internal storage
     fun saveLogo(uri: Uri) {
-        println("TODO")
+        companyLogo = storageRepository.saveImage(uri, "logo.png")
+    }
+
+    fun deleteLogo() {
+        companyLogo?.let {
+            storageRepository.deleteImage("logo.png")
+            companyLogo = null
+        }
     }
 
 }

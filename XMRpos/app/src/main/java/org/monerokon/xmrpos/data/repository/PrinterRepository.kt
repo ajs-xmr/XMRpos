@@ -7,7 +7,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class PrinterRepository(private val printerServiceManager: PrinterServiceManager,
-    private val dataStoreRepository: DataStoreRepository) {
+    private val dataStoreRepository: DataStoreRepository,
+    private val storageRepository: StorageRepository) {
 
     fun bindPrinterService() {
         printerServiceManager.bindPrinterService()
@@ -18,7 +19,11 @@ class PrinterRepository(private val printerServiceManager: PrinterServiceManager
     }
 
     suspend fun printReceipt(paymentSuccess: PaymentSuccess) {
-        printerServiceManager.printSpacer()
+        val companyLogo = storageRepository.readImage("logo.png")
+        if (companyLogo != null) {
+            printerServiceManager.printPicture(companyLogo)
+            printerServiceManager.printSpacer()
+        }
         printerServiceManager.printTextCenter(dataStoreRepository.getCompanyName().first())
         printerServiceManager.printTextCenter(dataStoreRepository.getContactInformation().first())
         printerServiceManager.printSpacer()
@@ -32,10 +37,7 @@ class PrinterRepository(private val printerServiceManager: PrinterServiceManager
         printerServiceManager.printText("Exchange rate: ${paymentSuccess.exchangeRate} ${paymentSuccess.primaryFiatCurrency} / XMR")
         printerServiceManager.printSpacer()
         printerServiceManager.printTextCenter("Thank you for your business!")
-        printerServiceManager.printSpacer()
-        printerServiceManager.printSpace()
-        printerServiceManager.printSpace()
-
+        printerServiceManager.printEnd()
     }
 
     private fun parseIsoDate(isoDate: String): String {
