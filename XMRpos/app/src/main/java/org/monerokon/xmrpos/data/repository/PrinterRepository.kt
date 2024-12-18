@@ -36,7 +36,7 @@ class PrinterRepository(private val printerServiceManager: PrinterServiceManager
         printerServiceManager.printText("${paymentSuccess.primaryFiatCurrency}: ${paymentSuccess.fiatAmount}")
         printerServiceManager.printText("Exchange rate: ${paymentSuccess.exchangeRate} ${paymentSuccess.primaryFiatCurrency} / XMR")
         printerServiceManager.printSpacer()
-        printerServiceManager.printTextCenter("Thank you for your business!")
+        printerServiceManager.printTextCenter(dataStoreRepository.getReceiptFooter().first())
         printerServiceManager.printEnd()
     }
 

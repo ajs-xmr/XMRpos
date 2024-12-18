@@ -25,6 +25,14 @@ class DataStoreRepository @Inject constructor(
         dataStoreLocalDataSource.saveContactInformation(contactInformation)
     }
 
+    fun getReceiptFooter(): Flow<String> {
+        return dataStoreLocalDataSource.getReceiptFooter()
+    }
+
+    suspend fun saveReceiptFooter(receiptFooter: String) {
+        dataStoreLocalDataSource.saveReceiptFooter(receiptFooter)
+    }
+
     // Other DataStore preferences functions
     fun getPrimaryFiatCurrency(): Flow<String> {
         return dataStoreLocalDataSource.getPrimaryFiatCurrency()

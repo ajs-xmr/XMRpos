@@ -15,6 +15,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 // Define the key
 val COMPANY_NAME: Preferences.Key<String> = stringPreferencesKey("company_name")
 val CONTACT_INFORMATION: Preferences.Key<String> = stringPreferencesKey("contact_information")
+val RECEIPT_FOOTER: Preferences.Key<String> = stringPreferencesKey("receipt_footer")
 val PRIMARY_FIAT_CURRENCY: Preferences.Key<String> = stringPreferencesKey("primary_fiat_currency")
 val REFERENCE_FIAT_CURRENCIES: Preferences.Key<String> = stringPreferencesKey("reference_fiat_currencies")
 val REQUIRE_PIN_CODE_ON_APP_START: Preferences.Key<Boolean> = booleanPreferencesKey("require_pin_code_on_app_start")

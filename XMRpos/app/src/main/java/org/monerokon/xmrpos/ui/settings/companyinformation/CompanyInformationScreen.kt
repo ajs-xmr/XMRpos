@@ -32,6 +32,8 @@ fun CompanyInformationScreenRoot(viewModel: CompanyInformationViewModel, navCont
         updateCompanyName = viewModel::updateCompanyName,
         contactInformation = viewModel.contactInformation,
         updateContactInformation = viewModel::updateContactInformation,
+        receiptFooter = viewModel.receiptFooter,
+        updateReceiptFooter = viewModel::updateReceiptFooter,
         saveLogo = viewModel::saveLogo,
         deleteLogo = viewModel::deleteLogo
     )
@@ -46,6 +48,8 @@ fun CompanyInformationScreen(
     updateCompanyName: (String) -> Unit,
     contactInformation: String,
     updateContactInformation: (String) -> Unit,
+    receiptFooter: String,
+    updateReceiptFooter: (String) -> Unit,
     saveLogo: (Uri) -> Unit,
     deleteLogo: () -> Unit
 ) {
@@ -130,6 +134,14 @@ fun CompanyInformationScreen(
                 onValueChange = {updateContactInformation(it)},
                 label = { Text("Contact information") },
                 supportingText = { Text("Shown on the receipts") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            TextField(
+                value = receiptFooter,
+                onValueChange = {updateReceiptFooter(it)},
+                label = { Text("Receipt footer") },
+                supportingText = { Text("Shown at the end of the receipt") },
                 modifier = Modifier.fillMaxWidth()
             )
         }

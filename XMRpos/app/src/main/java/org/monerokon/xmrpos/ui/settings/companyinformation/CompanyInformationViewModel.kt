@@ -41,6 +41,8 @@ class CompanyInformationViewModel @Inject constructor(
 
     var contactInformation: String by mutableStateOf("")
 
+    var receiptFooter: String by mutableStateOf("")
+
     // Load data from DataStore when ViewModel is initialized
     init {
         viewModelScope.launch {
@@ -51,6 +53,11 @@ class CompanyInformationViewModel @Inject constructor(
         viewModelScope.launch {
             dataStoreRepository.getContactInformation().collect { storedContactInformation ->
                 contactInformation = storedContactInformation
+            }
+        }
+        viewModelScope.launch {
+            dataStoreRepository.getReceiptFooter().collect { storedReceiptFooter ->
+                receiptFooter = storedReceiptFooter
             }
         }
         companyLogo = storageRepository.readImage("logo.png")
@@ -67,6 +74,13 @@ class CompanyInformationViewModel @Inject constructor(
         contactInformation = newContactInformation
         viewModelScope.launch {
             dataStoreRepository.saveContactInformation(newContactInformation)
+        }
+    }
+
+    fun updateReceiptFooter(newReceiptFooter: String) {
+        receiptFooter = newReceiptFooter
+        viewModelScope.launch {
+            dataStoreRepository.saveReceiptFooter(newReceiptFooter)
         }
     }
 

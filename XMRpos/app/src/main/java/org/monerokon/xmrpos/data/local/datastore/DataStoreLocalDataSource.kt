@@ -9,6 +9,7 @@ import MONERO_PAY_USE_CALLBACKS
 import PIN_CODE_ON_APP_START
 import PIN_CODE_OPEN_SETTINGS
 import PRIMARY_FIAT_CURRENCY
+import RECEIPT_FOOTER
 import REFERENCE_FIAT_CURRENCIES
 import REQUIRE_PIN_CODE_ON_APP_START
 import REQUIRE_PIN_CODE_OPEN_SETTINGS
@@ -45,6 +46,19 @@ class DataStoreLocalDataSource @Inject constructor(
     suspend fun saveContactInformation(contactInformation: String) {
         context.dataStore.edit { preferences ->
             preferences[CONTACT_INFORMATION] = contactInformation
+        }
+    }
+
+    fun getReceiptFooter(): Flow<String> {
+        return context.dataStore.data
+            .map { preferences ->
+                preferences[RECEIPT_FOOTER] ?: "Thank you for your business!"
+            }
+    }
+
+    suspend fun saveReceiptFooter(receiptFooter: String) {
+        context.dataStore.edit { preferences ->
+            preferences[RECEIPT_FOOTER] = receiptFooter
         }
     }
 
