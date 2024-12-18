@@ -119,7 +119,7 @@ fun PaymentCheckoutScreen(
 fun QRCodeWithImage(uri: String, generateQRCode: (String, Int, Int, Int, Int, Int) -> Bitmap) {
     var qrCodeBitmap: Bitmap? = null
     if (uri != "") {
-        qrCodeBitmap = generateQRCode(uri, 300, 300, 1, 0xFF000000.toInt(), MaterialTheme.colorScheme.primary.hashCode())
+        qrCodeBitmap = generateQRCode(uri, 400, 400, 1, 0xFF000000.toInt(), MaterialTheme.colorScheme.primary.hashCode())
     }
     Box (
         contentAlignment = Alignment.Center
