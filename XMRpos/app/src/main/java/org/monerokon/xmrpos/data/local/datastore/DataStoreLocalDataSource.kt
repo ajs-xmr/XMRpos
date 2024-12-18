@@ -16,6 +16,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import dataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -90,13 +91,14 @@ class DataStoreLocalDataSource @Inject constructor(
     }
 
     fun getFiatCurrencies(): Flow<List<String>> {
-        return context.dataStore.data
-            .map { preferences ->
-                val primaryFiatCurrency = preferences[PRIMARY_FIAT_CURRENCY] ?: "USD"
-                val referenceFiatCurrencies = preferences[REFERENCE_FIAT_CURRENCIES] ?: ""
-                val joinedString = "$primaryFiatCurrency,$referenceFiatCurrencies"
-                if (joinedString.toString() != "") joinedString.split(",") else emptyList()
-            }
+        val primaryFiatCurrency = getPrimaryFiatCurrency()
+        val referenceFiatCurrencies = getReferenceFiatCurrencies()
+        val joinedList = mutableListOf<String>()
+        return primaryFiatCurrency.combine(referenceFiatCurrencies) { primary, reference ->
+            joinedList.add(primary)
+            joinedList.addAll(reference)
+            joinedList
+        }
     }
 
     fun getRequirePinCodeOnAppStart(): Flow<Boolean> {
