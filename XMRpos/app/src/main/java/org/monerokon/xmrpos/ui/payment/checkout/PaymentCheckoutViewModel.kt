@@ -20,10 +20,13 @@ import org.monerokon.xmrpos.data.repository.HceRepository
 import org.monerokon.xmrpos.data.repository.MoneroPayRepository
 import org.monerokon.xmrpos.ui.PaymentEntry
 import org.monerokon.xmrpos.ui.PaymentSuccess
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.net.NetworkInterface
 import java.util.Hashtable
 import java.util.UUID
 import javax.inject.Inject
+import kotlin.math.pow
 
 @HiltViewModel
 class PaymentCheckoutViewModel @Inject constructor(
@@ -80,7 +83,8 @@ class PaymentCheckoutViewModel @Inject constructor(
             val exchangeRatesResponse = exchangeRateRepository.fetchExchangeRates().first()
             exchangeRates = exchangeRatesResponse.getOrNull()
 
-            targetXMRvalue = paymentValue / (exchangeRates?.get(primaryFiatCurrency) ?: 0.0)
+            targetXMRvalue = BigDecimal(paymentValue / (exchangeRates?.get(primaryFiatCurrency) ?: 0.0)).setScale(12, RoundingMode.UP).toDouble()
+
             Log.i(logTag, "Reference exchange rates: $referenceFiatCurrencies")
             Log.i(logTag, "Exchange rates: $exchangeRates")
 
@@ -92,7 +96,7 @@ class PaymentCheckoutViewModel @Inject constructor(
         val ipAddress = getDeviceIpAddress()
         val callbackUUID = UUID.randomUUID().toString()
         val moneroPayReceiveRequest = MoneroPayReceiveRequest(
-            (targetXMRvalue * 1000000000000).toLong(), "XMRPOS", "http://$ipAddress:8080?fiatValue=$paymentValue&callbackUUID=$callbackUUID"
+            (targetXMRvalue * 10.0.pow(12)).toLong(), "XMRPOS", "http://$ipAddress:8080?fiatValue=$paymentValue&callbackUUID=$callbackUUID"
         )
         viewModelScope.launch(Dispatchers.IO) {
             val response = moneroPayRepository.startReceive(moneroPayReceiveRequest)
@@ -128,7 +132,7 @@ class PaymentCheckoutViewModel @Inject constructor(
                         fiatAmount = paymentValue,
                         primaryFiatCurrency = primaryFiatCurrency,
                         txId = it.transaction.tx_hash,
-                        xmrAmount = it.amount.covered.total / 1000000000000.0,
+                        xmrAmount = it.amount.covered.total / 10.0.pow(12),
                         exchangeRate = exchangeRates?.get(primaryFiatCurrency) ?: 0.0,
                         timestamp = it.transaction.timestamp
                     ))
