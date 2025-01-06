@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Done
 import androidx.compose.material.icons.rounded.Settings
@@ -20,6 +21,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import org.monerokon.xmrpos.ui.common.composables.CustomAlertDialog
 
 // PaymentEntryScreenRoot
 @Composable
@@ -38,6 +40,8 @@ fun PaymentEntryScreenRoot(viewModel: PaymentEntryViewModel, navController: NavH
         pinCodeOpenSettings = viewModel.pinCodeOpenSettings,
         updateOpenSettingsPinCodeDialog = viewModel::updateOpenSettingsPinCodeDialog,
         openSettings = viewModel::openSettings,
+        errorMessage = viewModel.errorMessage,
+        resetErrorMessage = viewModel::resetErrorMessage,
     )
 }
 
@@ -56,6 +60,8 @@ fun PaymentEntryScreen(
     pinCodeOpenSettings: String,
     updateOpenSettingsPinCodeDialog: (Boolean) -> Unit,
     openSettings: () -> Unit,
+    errorMessage: String,
+    resetErrorMessage: () -> Unit,
 ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column (
@@ -110,7 +116,22 @@ fun PaymentEntryScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
+        when {
+            errorMessage != "" -> {
+                CustomAlertDialog(
+                    onDismissRequest = { resetErrorMessage() },
+                    onConfirmation = {
+                        resetErrorMessage()
+                    },
+                    dialogTitle = "Error",
+                    dialogText = errorMessage,
+                    confirmButtonText = "Ok",
+                    dismissButtonText = null,
+                    icon = Icons.Default.Warning
+                )
+            }
         }
+    }
     when {
         openSettingsPinCodeDialog -> {
             OpenSettingsDialog(

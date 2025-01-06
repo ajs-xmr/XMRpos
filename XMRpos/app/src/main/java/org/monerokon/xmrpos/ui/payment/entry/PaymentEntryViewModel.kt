@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.data.repository.ExchangeRateRepository
+import org.monerokon.xmrpos.shared.DataResult
 import org.monerokon.xmrpos.ui.PaymentCheckout
 import org.monerokon.xmrpos.ui.Settings
 import javax.inject.Inject
@@ -37,6 +38,8 @@ class PaymentEntryViewModel @Inject constructor(
     var requirePinCodeOpenSettings by mutableStateOf(true)
     var pinCodeOpenSettings by mutableStateOf("`")
 
+    var errorMessage by mutableStateOf("")
+
     init {
         fetchExchangeRate()
         // get exchange rate from public api
@@ -58,8 +61,13 @@ class PaymentEntryViewModel @Inject constructor(
             primaryFiatCurrency = primaryFiatCurrencyResponse
 
             val exchangeRateResponse = exchangeRateRepository.fetchPrimaryExchangeRate().first()
-            // get value of first key from ExchangeRateResponse (Map<String, Double>)
-            exchangeRate = exchangeRateResponse.getOrNull()?.entries?.first()?.value
+
+            if (exchangeRateResponse is DataResult.Failure) {
+                errorMessage = exchangeRateResponse.message
+            } else if (exchangeRateResponse is DataResult.Success) {
+                // get value of first key from ExchangeRateResponse (Map<String, Double>)
+                exchangeRate = exchangeRateResponse.data.entries.first().value
+            }
         }
     }
 
@@ -124,6 +132,10 @@ class PaymentEntryViewModel @Inject constructor(
 
     fun updateOpenSettingsPinCodeDialog(newOpenSettingsPinCodeDialog: Boolean) {
         openSettingsPinCodeDialog = newOpenSettingsPinCodeDialog
+    }
+
+    fun resetErrorMessage() {
+        errorMessage = ""
     }
 
 }

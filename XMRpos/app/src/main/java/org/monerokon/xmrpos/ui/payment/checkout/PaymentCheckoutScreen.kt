@@ -16,12 +16,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.monerokon.xmrpos.R
 import org.monerokon.xmrpos.ui.PaymentSuccess
+import org.monerokon.xmrpos.ui.common.composables.CustomAlertDialog
 
 @Composable
 fun PaymentCheckoutScreenRoot(viewModel: PaymentCheckoutViewModel, navController: NavHostController, fiatAmount: Double, primaryFiatCurrency: String) {
@@ -98,7 +98,7 @@ fun PaymentCheckoutScreen(
             }
             when {
                 openAlertDialog.value -> {
-                    AlertDialog(
+                    CustomAlertDialog(
                         onDismissRequest = { openAlertDialog.value = false },
                         onConfirmation = {
                             openAlertDialog.value = false
@@ -106,6 +106,8 @@ fun PaymentCheckoutScreen(
                         },
                         dialogTitle = "Warning",
                         dialogText = "If you go back while the customer is paying, the payment will not be confirmed in the app. Please only go back if the customer has not started paying yet.",
+                        confirmButtonText = "Go back",
+                        dismissButtonText = "Stay here",
                         icon = Icons.Default.Warning
                     )
                 }
@@ -142,46 +144,4 @@ fun QRCodeWithImage(uri: String, generateQRCode: (String, Int, Int, Int, Int, In
         )
 
     }
-}
-
-@Composable
-fun AlertDialog(
-    onDismissRequest: () -> Unit,
-    onConfirmation: () -> Unit,
-    dialogTitle: String,
-    dialogText: String,
-    icon: ImageVector,
-) {
-    AlertDialog(
-        icon = {
-            Icon(icon, contentDescription = "Example Icon")
-        },
-        title = {
-            Text(text = dialogTitle)
-        },
-        text = {
-            Text(text = dialogText)
-        },
-        onDismissRequest = {
-            onDismissRequest()
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirmation()
-                }
-            ) {
-                Text("Go back")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                }
-            ) {
-                Text("Stay here")
-            }
-        }
-    )
 }

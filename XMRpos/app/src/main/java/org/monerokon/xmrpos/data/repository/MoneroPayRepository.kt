@@ -12,6 +12,7 @@ import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveResponse
 import org.monerokon.xmrpos.data.remote.moneroPayCallback.MoneroPayCallbackManager
 import org.monerokon.xmrpos.data.remote.moneroPayCallback.model.PaymentCallback
+import org.monerokon.xmrpos.shared.DataResult
 
 class MoneroPayRepository(
     private val moneroPayRemoteDataSource: MoneroPayRemoteDataSource,
@@ -24,7 +25,7 @@ class MoneroPayRepository(
     val paymentStatus: StateFlow<PaymentCallback?> = _paymentStatus
     var currentCallbackUUID: String? = null
 
-    suspend fun startReceive(moneroPayReceiveRequest: MoneroPayReceiveRequest): MoneroPayReceiveResponse? {
+    suspend fun startReceive(moneroPayReceiveRequest: MoneroPayReceiveRequest): DataResult<MoneroPayReceiveResponse> {
         return withContext(Dispatchers.IO) {
             val response = moneroPayRemoteDataSource.startReceive(moneroPayReceiveRequest)
             response?.let {

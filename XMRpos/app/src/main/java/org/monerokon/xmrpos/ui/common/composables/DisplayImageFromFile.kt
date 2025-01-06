@@ -1,4 +1,4 @@
-package org.monerokon.xmrpos.ui.shared
+package org.monerokon.xmrpos.ui.common.composables
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image

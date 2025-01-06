@@ -18,6 +18,7 @@ import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
 import org.monerokon.xmrpos.data.repository.ExchangeRateRepository
 import org.monerokon.xmrpos.data.repository.HceRepository
 import org.monerokon.xmrpos.data.repository.MoneroPayRepository
+import org.monerokon.xmrpos.shared.DataResult
 import org.monerokon.xmrpos.ui.PaymentEntry
 import org.monerokon.xmrpos.ui.PaymentSuccess
 import java.math.BigDecimal
@@ -81,7 +82,12 @@ class PaymentCheckoutViewModel @Inject constructor(
             referenceFiatCurrencies = referenceFiatCurrenciesResponse
 
             val exchangeRatesResponse = exchangeRateRepository.fetchExchangeRates().first()
-            exchangeRates = exchangeRatesResponse.getOrNull()
+
+            if (exchangeRatesResponse is DataResult.Failure) {
+                errorMessage = exchangeRatesResponse.message
+            } else if (exchangeRatesResponse is DataResult.Success) {
+                exchangeRates = exchangeRatesResponse.data
+            }
 
             targetXMRvalue = BigDecimal(paymentValue / (exchangeRates?.get(primaryFiatCurrency) ?: 0.0)).setScale(12, RoundingMode.UP).toDouble()
 
@@ -103,15 +109,15 @@ class PaymentCheckoutViewModel @Inject constructor(
 
             Log.i(logTag, "MoneroPay: $response")
 
-            if (response != null) {
+            if (response is DataResult.Failure) {
+                errorMessage = response.message
+            } else if (response is DataResult.Success) {
                 moneroPayRepository.updateCurrentCallbackUUID(callbackUUID);
 
-                address = response.address
-                qrCodeUri = "monero:${response.address}?tx_amount=${targetXMRvalue}&tx_description=${response.description}"
+                address = response.data.address
+                qrCodeUri = "monero:${response.data.address}?tx_amount=${targetXMRvalue}&tx_description=${response.data.description}"
 
                 hceRepository.updateUri(qrCodeUri)
-            } else {
-                errorMessage = "MoneroPay server is not responding"
             }
         }
     }

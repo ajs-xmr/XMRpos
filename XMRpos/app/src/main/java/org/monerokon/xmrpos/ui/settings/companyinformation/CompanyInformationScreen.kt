@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import org.monerokon.xmrpos.ui.shared.DisplayImageFromFile
+import org.monerokon.xmrpos.ui.common.composables.DisplayImageFromFile
 import java.io.File
 
 @Composable
