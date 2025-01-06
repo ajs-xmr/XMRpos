@@ -1,5 +1,6 @@
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import okhttp3.Credentials
 import okhttp3.HttpUrl
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -14,7 +15,27 @@ class MoneroPayBaseUrlInterceptor(private val dataStoreRepository: DataStoreRepo
             .host(HttpUrl.parse(baseUrl)?.host() ?: originalRequest.url().host())
             .port(HttpUrl.parse(baseUrl)?.port() ?: originalRequest.url().port())
             .build()
-        val newRequest = originalRequest.newBuilder().url(newUrl).build()
-        return chain.proceed(newRequest)
+
+        // check if baseUrl contains credentials
+        val pattern = Regex("^[a-zA-Z]+://[^:]+:[^@]+@.+$")
+        if (pattern.matches(baseUrl)) {
+            val pattern1 = Regex("^[a-zA-Z]+://([^:]+):([^@]+)@.+$")
+            val matchResult = pattern1.find(baseUrl)
+
+            val username = matchResult?.groupValues[1] ?: ""
+            val password = matchResult?.groupValues[2] ?: ""
+
+            val credentials = Credentials.basic(username, password)
+
+            val newRequest = originalRequest.newBuilder()
+                .url(newUrl)
+                .header("Authorization", credentials)
+                .build()
+
+            return chain.proceed(newRequest)
+        } else {
+            val newRequest = originalRequest.newBuilder().url(newUrl).build()
+            return chain.proceed(newRequest)
+        }
     }
 }
