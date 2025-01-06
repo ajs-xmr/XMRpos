@@ -38,6 +38,7 @@ fun PaymentCheckoutScreenRoot(viewModel: PaymentCheckoutViewModel, navController
         generateQRCode = viewModel::generateQRCode,
         navigateBack = viewModel::navigateBack,
         errorMessage = viewModel.errorMessage,
+        resetErrorMessage = viewModel::resetErrorMessage,
         navigateToPaymentSuccess = viewModel::navigateToPaymentSuccess
     )
 }
@@ -53,6 +54,7 @@ fun PaymentCheckoutScreen(
     generateQRCode: (String, Int, Int, Int, Int, Int) -> Bitmap,
     navigateBack: () -> Unit,
     errorMessage: String,
+    resetErrorMessage: () -> Unit,
     navigateToPaymentSuccess: (PaymentSuccess) -> Unit
 ) {
     val openAlertDialog = remember { mutableStateOf(false) }
@@ -95,6 +97,21 @@ fun PaymentCheckoutScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 CircularProgressIndicator()
+            }
+            when {
+                errorMessage != "" -> {
+                    CustomAlertDialog(
+                        onDismissRequest = { resetErrorMessage()},
+                        onConfirmation = {
+                            resetErrorMessage()
+                        },
+                        dialogTitle = "Error",
+                        dialogText = errorMessage,
+                        confirmButtonText = "Ok",
+                        dismissButtonText = null,
+                        icon = Icons.Default.Warning
+                    )
+                }
             }
             when {
                 openAlertDialog.value -> {

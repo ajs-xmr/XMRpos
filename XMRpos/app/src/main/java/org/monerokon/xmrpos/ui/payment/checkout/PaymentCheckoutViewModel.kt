@@ -172,6 +172,10 @@ class PaymentCheckoutViewModel @Inject constructor(
         moneroPayRepository.stopReceive()
     }
 
+    fun resetErrorMessage() {
+        errorMessage = ""
+    }
+
     override fun onCleared() {
         super.onCleared()
         stopReceive()
