@@ -1,11 +1,11 @@
 package org.monerokon.xmrpos.di
 
+import MoneroPayBaseUrlInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
 import org.monerokon.xmrpos.data.remote.moneroPay.MoneroPayApi
 import org.monerokon.xmrpos.data.remote.moneroPay.MoneroPayRemoteDataSource
 import org.monerokon.xmrpos.data.remote.moneroPayCallback.MoneroPayCallbackManager
@@ -24,9 +24,13 @@ object MoneroPayModule {
     @Provides
     @Named("moneroPayRetrofit")
     fun provideMoneroPayRetrofit(dataStoreRepository: DataStoreRepository): Retrofit {
-        val baseUrl = runBlocking { dataStoreRepository.getMoneroPayServerAddress().first() }
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(MoneroPayBaseUrlInterceptor(dataStoreRepository))
+            .build()
+
         return Retrofit.Builder()
-            .baseUrl(baseUrl)
+            .client(okHttpClient)
+            .baseUrl("https://dummyurl.local/") // Dummy base URL
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
