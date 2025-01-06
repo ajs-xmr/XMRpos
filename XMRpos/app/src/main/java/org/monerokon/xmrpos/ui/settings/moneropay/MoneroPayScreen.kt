@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import org.monerokon.xmrpos.ui.common.composables.CustomAlertDialog
 
 @Composable
 fun MoneroPayScreenRoot(viewModel: MoneroPayViewModel, navController: NavHostController) {
@@ -27,6 +29,9 @@ fun MoneroPayScreenRoot(viewModel: MoneroPayViewModel, navController: NavHostCon
         updateServerAddress = viewModel::updateServerAddress,
         updateRequestInterval = viewModel::updateRequestInterval,
         updateConf = viewModel::updateConf,
+        healthStatus = viewModel.healthStatus,
+        fetchMoneroPayHealth = viewModel::fetchMoneroPayHealth,
+        resetHealthStatus = viewModel::resetHealthStatus
     )
 }
 
@@ -41,6 +46,9 @@ fun MoneroPayScreen(
     updateServerAddress: (String) -> Unit,
     updateRequestInterval: (String) -> Unit,
     updateConf: (String) -> Unit,
+    healthStatus: String,
+    fetchMoneroPayHealth: () -> Unit,
+    resetHealthStatus: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -79,7 +87,7 @@ fun MoneroPayScreen(
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
-                FilledTonalButton (onClick = {}) {
+                FilledTonalButton (onClick = {fetchMoneroPayHealth()}) {
                     Text("Test")
                 }
             }
@@ -100,7 +108,19 @@ fun MoneroPayScreen(
             }
             Spacer(modifier = Modifier.height(24.dp))
             ConfSelector(conf, confOptions, onConfSelected = {updateConf(it)}, modifier = Modifier.width(130.dp))
-        }}
+        }
+        when {healthStatus != "" ->
+            CustomAlertDialog(
+                onDismissRequest = { resetHealthStatus() },
+                onConfirmation = { resetHealthStatus() },
+                dialogTitle = "Health status",
+                dialogText = healthStatus,
+                confirmButtonText = "OK",
+                dismissButtonText = null,
+                icon = Icons.Default.Info
+            )
+        }
+    }
 }
 
 

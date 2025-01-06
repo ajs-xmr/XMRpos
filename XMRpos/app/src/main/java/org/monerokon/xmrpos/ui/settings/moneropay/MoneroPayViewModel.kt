@@ -10,12 +10,15 @@ import androidx.navigation.NavHostController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import org.monerokon.xmrpos.data.repository.DataStoreRepository
+import org.monerokon.xmrpos.data.repository.MoneroPayRepository
+import org.monerokon.xmrpos.shared.DataResult
 import org.monerokon.xmrpos.ui.Settings
 import javax.inject.Inject
 
 @HiltViewModel
 class MoneroPayViewModel @Inject constructor(
     private val dataStoreRepository: DataStoreRepository,
+    private val moneroPayRepository: MoneroPayRepository
 ) : ViewModel() {
 
     private val logTag = "MoneroPayViewModel"
@@ -37,6 +40,8 @@ class MoneroPayViewModel @Inject constructor(
     var requestInterval: String by mutableStateOf("5")
 
     var conf: String by mutableStateOf("")
+
+    var healthStatus by mutableStateOf("")
 
     init {
         viewModelScope.launch {
@@ -87,6 +92,23 @@ class MoneroPayViewModel @Inject constructor(
         viewModelScope.launch {
             dataStoreRepository.saveMoneroPayConfValue(newConf)
         }
+    }
+
+    fun fetchMoneroPayHealth() {
+        viewModelScope.launch {
+            val response = moneroPayRepository.fetchMoneroPayHealth()
+            if (response is DataResult.Success) {
+                Log.i(logTag, "MoneroPay health: ${response.data}")
+                healthStatus = response.data.toString()
+            } else if (response is DataResult.Failure) {
+                Log.e(logTag, "MoneroPay health: ${response.message}")
+                healthStatus = response.message
+            }
+        }
+    }
+
+    fun resetHealthStatus() {
+        healthStatus = ""
     }
 }
 

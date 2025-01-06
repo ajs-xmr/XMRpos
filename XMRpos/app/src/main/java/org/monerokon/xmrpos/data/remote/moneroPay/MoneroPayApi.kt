@@ -1,5 +1,6 @@
 package org.monerokon.xmrpos.data.remote.moneroPay
 
+import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayHealthResponse
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveResponse
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveStatusResponse
@@ -18,4 +19,7 @@ interface MoneroPayApi {
     suspend fun fetchReceiveStatus(
         @Path("address") address: String
     ): MoneroPayReceiveStatusResponse
+
+    @GET("health")
+    suspend fun fetchHealth(): MoneroPayHealthResponse
 }

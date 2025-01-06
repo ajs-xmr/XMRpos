@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.monerokon.xmrpos.data.local.room.model.Transaction
 import org.monerokon.xmrpos.data.remote.moneroPay.MoneroPayRemoteDataSource
+import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayHealthResponse
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
 import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveResponse
 import org.monerokon.xmrpos.data.remote.moneroPayCallback.MoneroPayCallbackManager
@@ -149,9 +150,12 @@ class MoneroPayRepository(
         }
     }
 
-
     fun stopReceive() {
         callbackManager.stopListening()
         paymentStatusJob?.cancel()
+    }
+
+    suspend fun fetchMoneroPayHealth(): DataResult<MoneroPayHealthResponse> {
+        return moneroPayRemoteDataSource.fetchHealth()
     }
 }
