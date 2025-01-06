@@ -41,11 +41,11 @@ class MoneroPayRepository(
             val response = moneroPayRemoteDataSource.startReceive(moneroPayReceiveRequest)
 
             if (response is DataResult.Success) {
-                /*callbackManager.startListening { paymentCallback, fiatValue, callbackUUID ->
+                callbackManager.startListening { paymentCallback, fiatValue, callbackUUID ->
                     kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
                         handlePaymentCallback(paymentCallback, fiatValue, callbackUUID)
                     }
-                }*/
+                }
                 currentAddress = response.data.address
                 checkPeriodicPaymentStatus()
             }
