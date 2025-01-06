@@ -1,15 +1,69 @@
+# Android Studio/IntelliJ specific
 *.iml
 .gradle
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+/.idea/*
+!.idea/description.*
+!.idea/modules.xml
+!.idea/vcs.xml
+!.idea/workspace.xml
+!.idea/navEditor.xml
+!.idea/assetWizardSettings.xml
+
+# MacOS specific
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-local.properties
+
+# Gradle
+/build/
+.gradle/
+.gradle-cache/
+.gradle-wrapper/
+
+# Captures (for screenshots or screen recordings)
+captures/
+
+# External native builds (CMake, ndk-build)
+.externalNativeBuild/
+.cxx/
+
+# Log files
+*.log
+
+# Kotlin specific
+*.kotlin_metadata
+
+# Proguard and lint files
+lint/intermediates/
+lint/generated/
+
+# Miscellaneous
+/local.properties
+*.lock
+*.log
+*.class
+*.jar
+*.swp
+*.swo
+*~
+
+# Android Studio Navigation Editor
+.navigation/
+
+# JetBrains IDEs
+.idea/assetWizardSettings.xml
+.idea/navEditor.xml
+
+# NDK
+/ndk/build
+/ndk/intermediates
+/ndk/out
+
+# Ignore build outputs
+/app/release/
+/app/debug/
+
+# Generated Files
+**/generated/**
+
+# Git Specific
+.git/
