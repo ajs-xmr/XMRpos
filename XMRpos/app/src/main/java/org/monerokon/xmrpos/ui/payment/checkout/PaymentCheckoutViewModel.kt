@@ -105,14 +105,15 @@ class PaymentCheckoutViewModel @Inject constructor(
             (targetXMRvalue * 10.0.pow(12)).toLong(), "XMRPOS", "http://$ipAddress:8080?fiatValue=$paymentValue&callbackUUID=$callbackUUID"
         )
         viewModelScope.launch(Dispatchers.IO) {
+            moneroPayRepository.updateCurrentCallback(callbackUUID, paymentValue);
             val response = moneroPayRepository.startReceive(moneroPayReceiveRequest)
 
             Log.i(logTag, "MoneroPay: $response")
 
             if (response is DataResult.Failure) {
                 errorMessage = response.message
+                moneroPayRepository.updateCurrentCallback(null, null)
             } else if (response is DataResult.Success) {
-                moneroPayRepository.updateCurrentCallbackUUID(callbackUUID);
 
                 address = response.data.address
                 qrCodeUri = "monero:${response.data.address}?tx_amount=${targetXMRvalue}&tx_description=${response.data.description}"

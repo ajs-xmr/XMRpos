@@ -4,6 +4,6 @@ data class MoneroPayReceiveStatusResponse(
     val amount: MoneroPayAmount,
     val complete: Boolean,
     val description: String,
-    val createdAt: String,
-    val transactions: List<MoneroPayTransaction>
+    val created_at: String,
+    val transactions: List<MoneroPayTransaction>?
 )
