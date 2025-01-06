@@ -102,12 +102,12 @@ class DataStoreRepository @Inject constructor(
         dataStoreLocalDataSource.saveMoneroPayServerAddress(moneroPayServerAddress)
     }
 
-    fun getMoneroPayRefreshInterval(): Flow<Int> {
-        return dataStoreLocalDataSource.getMoneroPayRefreshInterval()
+    fun getMoneroPayRequestInterval(): Flow<Int> {
+        return dataStoreLocalDataSource.getMoneroPayRequestInterval()
     }
 
-    suspend fun saveMoneroPayRefreshInterval(moneroPayRefreshInterval: Int) {
-        dataStoreLocalDataSource.saveMoneroPayRefreshInterval(moneroPayRefreshInterval)
+    suspend fun saveMoneroPayRequestInterval(moneroPayRequestInterval: Int) {
+        dataStoreLocalDataSource.saveMoneroPayRequestInterval(moneroPayRequestInterval)
     }
 
 }

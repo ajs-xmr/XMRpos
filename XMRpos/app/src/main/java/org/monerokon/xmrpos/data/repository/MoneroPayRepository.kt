@@ -2,9 +2,11 @@ package org.monerokon.xmrpos.data.repository
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.monerokon.xmrpos.data.local.room.model.Transaction
@@ -24,6 +26,8 @@ class MoneroPayRepository(
     private val transactionRepository: TransactionRepository,
     private val dataStoreRepository: DataStoreRepository
 ) {
+
+    private var paymentStatusJob: Job? = null
 
     private val _paymentStatus = MutableStateFlow<PaymentCallback?>(null)
     val paymentStatus: StateFlow<PaymentCallback?> = _paymentStatus
@@ -52,15 +56,21 @@ class MoneroPayRepository(
         val initialCallbackUUID = currentCallbackUUID
         val currentFiatValue = currentFiatValue
         val currentAddress = currentAddress
+
         if (initialCallbackUUID != null && currentFiatValue != null && currentAddress != null) {
-            kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
-                while (currentCallbackUUID == initialCallbackUUID) {
+            // Cancel any existing job
+            paymentStatusJob?.cancel()
+
+            // Launch a new coroutine job
+            paymentStatusJob = kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
+                val requestInterval = dataStoreRepository.getMoneroPayRequestInterval().first()
+                while (isActive && currentCallbackUUID == initialCallbackUUID) {
                     Log.i("MoneroPayRepository", "Checking payment status")
                     val response = moneroPayRemoteDataSource.fetchReceiveStatus(currentAddress)
                     Log.i("MoneroPayRepository", response.toString())
                     if (response is DataResult.Success) {
-                        if (response.data.transactions == null || response.data.transactions.isEmpty()) {
-                            kotlinx.coroutines.delay(10000)
+                        if (response.data.transactions.isNullOrEmpty()) {
+                            kotlinx.coroutines.delay(requestInterval.toLong() * 1000)
                             continue
                         }
                         handlePaymentCallback(
@@ -91,7 +101,7 @@ class MoneroPayRepository(
                             initialCallbackUUID
                         )
                     }
-                    kotlinx.coroutines.delay(10000) // Delay for 10 seconds
+                    kotlinx.coroutines.delay(requestInterval.toLong() * 1000) // Delay for the request interval
                 }
             }
         }
@@ -100,6 +110,7 @@ class MoneroPayRepository(
     fun updateCurrentCallback(callbackUUID: String?, fiatValue: Double?) {
         currentCallbackUUID = callbackUUID
         currentFiatValue = fiatValue
+        paymentStatusJob?.cancel()
     }
 
     private suspend fun handlePaymentCallback(paymentCallback: PaymentCallback, fiatValue: Double, callbackUUID: String) {
@@ -123,6 +134,7 @@ class MoneroPayRepository(
             currentCallbackUUID = null
             currentFiatValue = null
             currentAddress = null
+            paymentStatusJob?.cancel()
 
             _paymentStatus.value = paymentCallback
 
@@ -140,5 +152,6 @@ class MoneroPayRepository(
 
     fun stopReceive() {
         callbackManager.stopListening()
+        paymentStatusJob?.cancel()
     }
 }

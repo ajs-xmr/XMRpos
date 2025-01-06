@@ -22,10 +22,10 @@ fun MoneroPayScreenRoot(viewModel: MoneroPayViewModel, navController: NavHostCon
         onBackClick = viewModel::navigateToMainSettings,
         confOptions = viewModel.confOptions,
         serverAddress = viewModel.serverAddress,
-        refreshInterval = viewModel.refreshInterval,
+        requestInterval = viewModel.requestInterval,
         conf = viewModel.conf,
         updateServerAddress = viewModel::updateServerAddress,
-        updateRefreshInterval = viewModel::updateRefreshInterval,
+        updateRequestInterval = viewModel::updateRequestInterval,
         updateConf = viewModel::updateConf,
     )
 }
@@ -36,10 +36,10 @@ fun MoneroPayScreen(
     onBackClick: () -> Unit,
     confOptions: List<String>,
     serverAddress: String,
-    refreshInterval: String,
+    requestInterval: String,
     conf: String,
     updateServerAddress: (String) -> Unit,
-    updateRefreshInterval: (String) -> Unit,
+    updateRequestInterval: (String) -> Unit,
     updateConf: (String) -> Unit,
 ) {
     Scaffold(
@@ -91,8 +91,8 @@ fun MoneroPayScreen(
             ) {
                 Text("Request interval", style = MaterialTheme.typography.labelLarge)
                 TextField(
-                    value = refreshInterval,
-                    onValueChange = {updateRefreshInterval(it)},
+                    value = requestInterval,
+                    onValueChange = {updateRequestInterval(it)},
                     label = { Text("Seconds") },
                     modifier = Modifier.width(130.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)

@@ -34,7 +34,7 @@ class MoneroPayViewModel @Inject constructor(
 
     var serverAddress: String by mutableStateOf("")
 
-    var refreshInterval: String by mutableStateOf("5")
+    var requestInterval: String by mutableStateOf("5")
 
     var conf: String by mutableStateOf("")
 
@@ -52,9 +52,9 @@ class MoneroPayViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            dataStoreRepository.getMoneroPayRefreshInterval().collect { storedRefreshInterval ->
-                Log.i(logTag, "storedRefreshInterval: $storedRefreshInterval")
-                refreshInterval = storedRefreshInterval.toString()
+            dataStoreRepository.getMoneroPayRequestInterval().collect { storedRequestInterval ->
+                Log.i(logTag, "storedRequestInterval: $storedRequestInterval")
+                requestInterval = storedRequestInterval.toString()
             }
         }
     }
@@ -66,18 +66,18 @@ class MoneroPayViewModel @Inject constructor(
         }
     }
 
-    fun updateRefreshInterval(newRefreshInterval: String) {
-        if (newRefreshInterval.isEmpty()) {
-            refreshInterval = ""
+    fun updateRequestInterval(newRequestInterval: String) {
+        if (newRequestInterval.isEmpty()) {
+            requestInterval = ""
             viewModelScope.launch {
-                dataStoreRepository.saveMoneroPayRefreshInterval(5)
+                dataStoreRepository.saveMoneroPayRequestInterval(5)
             }
             return
         }
-        if (newRefreshInterval.all { it.isDigit() }) {
-            refreshInterval = newRefreshInterval
+        if (newRequestInterval.all { it.isDigit() }) {
+            requestInterval = newRequestInterval
             viewModelScope.launch {
-                dataStoreRepository.saveMoneroPayRefreshInterval(newRefreshInterval.toInt())
+                dataStoreRepository.saveMoneroPayRequestInterval(newRequestInterval.toInt())
             }
         }
     }

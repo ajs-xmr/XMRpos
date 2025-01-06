@@ -179,16 +179,16 @@ class DataStoreLocalDataSource @Inject constructor(
         }
     }
 
-    fun getMoneroPayRefreshInterval(): Flow<Int> {
+    fun getMoneroPayRequestInterval(): Flow<Int> {
         return context.dataStore.data
             .map { preferences ->
                 preferences[MONERO_PAY_REFRESH_INTERVAL] ?: 5
             }
     }
 
-    suspend fun saveMoneroPayRefreshInterval(moneroPayRefreshInterval: Int) {
+    suspend fun saveMoneroPayRequestInterval(moneroPayRequestInterval: Int) {
         context.dataStore.edit { preferences ->
-            preferences[MONERO_PAY_REFRESH_INTERVAL] = moneroPayRefreshInterval
+            preferences[MONERO_PAY_REFRESH_INTERVAL] = moneroPayRequestInterval
         }
     }
 
