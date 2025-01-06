@@ -47,7 +47,7 @@ You can also choose to delete all transactions that are currently saved.
 ### MoneroPay
 Here you enter the server address for your MoneroPay instance.
 
-You can also choose to change the request interval which is how often the app will manually check the MoneroPay instance to look for changes instead of waiting for a callback (NOT YET SUPPORTED)
+You can also choose to change the request interval which is how often the app will manually check the MoneroPay instance to look for changes instead of waiting for a callback
 
 The number of required confirmations can also be changed here (0-conf, 1-conf or 10-conf)
 
