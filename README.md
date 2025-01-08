@@ -1,6 +1,8 @@
 # XMRpos
 FOSS Monero Point of Sale (POS) Android App
 
+![pay](xmrpos-pay.gif)
+
 # Compatability
 The app is designed to run specifically on the **Alacrity MJ-Q50Plus** device but should work on any **Noryox NB55** based devices.
 
