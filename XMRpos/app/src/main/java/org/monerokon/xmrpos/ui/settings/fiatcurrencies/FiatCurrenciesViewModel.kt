@@ -26,7 +26,7 @@ class FiatCurrenciesViewModel @Inject constructor(
         "CLP", "CZK", "EUR", "GBP", "GEL", "HUF", "IDR", "INR", "KRW",
         "MXN", "MYR",
         "NGN", "NOK", "NZD", "PEN", "PHP", "PLN", "RON", "RUB",
-        "SEK", "SGD", "ZMW"
+        "SEK", "SGD", "USD", "ZMW"
     )
 
     private var navController: NavHostController? = null
