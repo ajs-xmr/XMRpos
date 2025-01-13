@@ -16,6 +16,12 @@ When running XMRpos for the first time you need to at least configure the Monero
 2. Tap on MoneroPay
 3. Change the MoneroPay address to the one you want to use.
 
+If your device has a printer you have to configure it like this:
+1. Tap on settings icon on the top right corner
+2. Tap on printer settings
+3. Select the printer connection that your printer uses (NOTE: only Bluetooth is tested right now)
+4. Adjust the printer parameters if necessary 
+
 ## Taking payments
 The payment flow is a 3 step process. 
 1. Enter the amount in the `primaryFiatCurrency` and press the green button
