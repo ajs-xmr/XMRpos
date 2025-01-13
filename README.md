@@ -59,6 +59,13 @@ You can also choose to change the request interval which is how often the app wi
 
 The number of required confirmations can also be changed here (0-conf, 1-conf or 10-conf)
 
+### Printer settings
+Here you can choose the printer connection type of your printer (NOTE: Only Bluetooth is tested)
+
+There are many parameters here that are changeable if your printer does not work out of the box.
+
+The print test button prints a receipt the same way as it would be printed after a transaction, but with static values.
+
 
 # Building XMRpos from source
 This guide will help you build and run **XMRpos** from source.
