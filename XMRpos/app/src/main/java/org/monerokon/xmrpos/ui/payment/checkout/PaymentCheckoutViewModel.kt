@@ -14,11 +14,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.monerokon.xmrpos.data.remote.moneroPay.model.MoneroPayReceiveRequest
+import org.monerokon.xmrpos.data.remote.backend.model.BackendCreateTransactionRequest
+import org.monerokon.xmrpos.data.repository.BackendRepository
 import org.monerokon.xmrpos.data.repository.DataStoreRepository
 import org.monerokon.xmrpos.data.repository.ExchangeRateRepository
 import org.monerokon.xmrpos.data.repository.HceRepository
-import org.monerokon.xmrpos.data.repository.MoneroPayRepository
 import org.monerokon.xmrpos.shared.DataResult
 import org.monerokon.xmrpos.ui.PaymentEntry
 import org.monerokon.xmrpos.ui.PaymentSuccess
@@ -33,7 +33,7 @@ import kotlin.math.pow
 @HiltViewModel
 class PaymentCheckoutViewModel @Inject constructor(
     private val exchangeRateRepository: ExchangeRateRepository,
-    private val moneroPayRepository: MoneroPayRepository,
+    private val backendRepository: BackendRepository,
     private val hceRepository: HceRepository,
     private val dataStoreRepository: DataStoreRepository,
 ) : ViewModel() {
@@ -57,7 +57,6 @@ class PaymentCheckoutViewModel @Inject constructor(
     var exchangeRates: Map<String, Double>? by mutableStateOf(null)
     var targetXMRvalue by mutableStateOf(0.0)
 
-    var moneroPayServerAddress by mutableStateOf("")
     var qrCodeUri by mutableStateOf("")
     var address by mutableStateOf("")
     var errorMessage by mutableStateOf("")
@@ -96,56 +95,57 @@ class PaymentCheckoutViewModel @Inject constructor(
             Log.i(logTag, "Reference exchange rates: $referenceFiatCurrencies")
             Log.i(logTag, "Exchange rates: $exchangeRates")
 
-            startMoneroPayReceive()
+            startPayReceive()
         }
     }
 
-    private fun startMoneroPayReceive() {
-        val ipAddress = getDeviceIpAddress()
-        val callbackUUID = UUID.randomUUID().toString()
-        val moneroPayReceiveRequest = MoneroPayReceiveRequest(
-            (targetXMRvalue * 10.0.pow(12)).toLong(), "XMRPOS", "http://$ipAddress:8080?fiatValue=$paymentValue&callbackUUID=$callbackUUID"
-        )
+    private fun startPayReceive() {
+
         viewModelScope.launch(Dispatchers.IO) {
-            moneroPayRepository.updateCurrentCallback(callbackUUID, paymentValue);
-            val response = moneroPayRepository.startReceive(moneroPayReceiveRequest)
+            val backendCreateTransactionRequest = BackendCreateTransactionRequest(
+                (targetXMRvalue * 10.0.pow(12)).toLong(),
+                "XMRpos",
+                paymentValue,
+                primaryFiatCurrency,
+                dataStoreRepository.getBackendConfValue().first().split("-")[0].toInt()
+            )
+            /*moneroPayRepository.updateCurrentCallback(callbackUUID, paymentValue);*/
+            val response = backendRepository.createTransaction(backendCreateTransactionRequest)
 
             Log.i(logTag, "MoneroPay: $response")
 
             if (response is DataResult.Failure) {
                 errorMessage = response.message
-                moneroPayRepository.updateCurrentCallback(null, null)
+                stopReceive()
             } else if (response is DataResult.Success) {
 
                 address = response.data.address
-                qrCodeUri = "monero:${response.data.address}?tx_amount=${targetXMRvalue}&tx_description=${response.data.description}"
+                qrCodeUri = "monero:${response.data.address}?tx_amount=${targetXMRvalue}&tx_description=XMRpos"
+
+                backendRepository.observeCurrentTransactionUpdates(response.data.id)
 
                 hceRepository.updateUri(qrCodeUri)
             }
         }
     }
 
-    private fun getDeviceIpAddress(): String? {
-        return NetworkInterface.getNetworkInterfaces().toList()
-            .flatMap { it.inetAddresses.toList() }
-            .firstOrNull { it.isSiteLocalAddress }
-            ?.hostAddress
-    }
-
     private fun observePaymentStatus() {
         viewModelScope.launch {
-            moneroPayRepository.paymentStatus.collect { paymentCallback ->
-                paymentCallback?.let {
-                    stopReceive()
-                    navigateToPaymentSuccess(PaymentSuccess(
-                        fiatAmount = paymentValue,
-                        primaryFiatCurrency = primaryFiatCurrency,
-                        txId = it.transaction.tx_hash,
-                        xmrAmount = it.amount.covered.total / 10.0.pow(12),
-                        exchangeRate = exchangeRates?.get(primaryFiatCurrency) ?: 0.0,
-                        timestamp = it.transaction.timestamp,
-                        showPrintReceipt = dataStoreRepository.getPrinterConnectionType().first() != "none"
-                    ))
+            backendRepository.currentTransactionStatus.collect {
+                if (it != null) {
+                    if (it.id == backendRepository.currentTransactionId)
+                    if (it.accepted) {
+                        backendRepository.currentTransactionId = null;
+                        navigateToPaymentSuccess(PaymentSuccess(
+                            fiatAmount = paymentValue,
+                            primaryFiatCurrency = primaryFiatCurrency,
+                            txId = it.subTransactions[0].txHash,
+                            xmrAmount = it.amount / 10.0.pow(12),
+                            exchangeRate = exchangeRates?.get(primaryFiatCurrency) ?: 0.0,
+                            timestamp = it.updatedAt,
+                            showPrintReceipt = dataStoreRepository.getPrinterConnectionType().first() != "none"
+                        ))
+                    }
                 }
             }
         }
@@ -172,7 +172,7 @@ class PaymentCheckoutViewModel @Inject constructor(
 
     fun stopReceive() {
         hceRepository.updateUri("")
-        moneroPayRepository.stopReceive()
+        backendRepository.stopObservingTransactionUpdates()
     }
 
     fun resetErrorMessage() {
