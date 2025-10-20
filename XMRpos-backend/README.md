@@ -69,7 +69,7 @@ docker compose up -d
 ```
 git clone https://github.com/MoneroKon/XMRpos
 cd XMRpos/XMRpos-backend
-cp .env.example .env
+cp .env.docker.example .env
 # edit .env (use: openssl rand -hex 32 for secrets) and docker-compose.yaml
 # if Postgres already uses host 5432, map to a free port: 55432:5432
 docker compose up -d --build
