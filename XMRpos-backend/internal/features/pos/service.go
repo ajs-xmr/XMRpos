@@ -2,6 +2,7 @@ package pos
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -51,7 +52,13 @@ func (s *PosService) CreateTransaction(ctx context.Context, vendorID uint, posID
 		return 0, "", err
 	}
 
-	callbackUrl := s.config.MoneroPayCallbackURL + "receive/" + accessToken
+	callbackURLTemplate := s.config.MoneroPayCallbackURL
+	var callbackUrl string
+	if strings.Contains(callbackURLTemplate, "{jwt}") {
+		callbackUrl = strings.Replace(callbackURLTemplate, "{jwt}", accessToken, 1)
+	} else {
+		callbackUrl = strings.TrimRight(callbackURLTemplate, "/") + "/receive/" + accessToken
+	}
 
 	var desc string
 	if description != nil {

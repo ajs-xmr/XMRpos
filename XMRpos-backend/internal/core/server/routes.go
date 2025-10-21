@@ -49,11 +49,11 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB) *chi.Mux {
 	// Initialize services
 	adminService := admin.NewAdminService(adminRepository, cfg)
 	authService := auth.NewAuthService(authRepository, cfg)
-	vendorService := vendor.NewVendorService(vendorRepository, db, cfg, rpcClient)
+	vendorService := vendor.NewVendorService(vendorRepository, db, cfg, rpcClient, moneroPayClient)
 	vendorService.StartTransferCompleter(ctx, 30*time.Second) // Check every 30 seconds
 	posService := pos.NewPosService(posRepository, cfg, moneroPayClient)
 	callbackService := callback.NewCallbackService(callbackRepository, cfg, moneroPayClient)
-	callbackService.StartConfirmationChecker(ctx, 30*time.Minute) // Check every 30 minutes
+	callbackService.StartConfirmationChecker(ctx, 2*time.Second) // Check for confirmations every 2 seconds
 	miscService := misc.NewMiscService(miscRepository, cfg, moneroPayClient)
 
 	// Initialize handlers
@@ -77,6 +77,7 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB) *chi.Mux {
 
 		// Callback routes
 		r.Post("/callback/receive/{jwt}", callbackHandler.ReceiveTransaction)
+		r.Post("/receive/{jwt}", callbackHandler.ReceiveTransaction)
 
 		// Miscellaneous routes
 		r.Get("/misc/health", miscHandler.GetHealth)
