@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/config"
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/rpc"
+	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/wallet"
 	localMiddleware "github.com/monerokon/xmrpos/xmrpos-backend/internal/core/server/middleware"
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/features/admin"
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/features/auth"
@@ -37,6 +38,7 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB) *chi.Mux {
 		cfg.MoneroWalletRPCUsername,
 		cfg.MoneroWalletRPCPassword,
 	)
+	wallet.Initialize(ctx, cfg, rpcClient)
 
 	// Initialize repositories
 	adminRepository := admin.NewAdminRepository(db)
