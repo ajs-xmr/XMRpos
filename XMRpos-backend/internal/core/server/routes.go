@@ -55,7 +55,7 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB) *chi.Mux {
 	vendorService.StartTransferCompleter(ctx, 30*time.Second) // Check every 30 seconds
 	posService := pos.NewPosService(posRepository, cfg, moneroPayClient)
 	callbackService := callback.NewCallbackService(callbackRepository, cfg, moneroPayClient)
-	callbackService.StartConfirmationChecker(ctx, 2*time.Second) // Check for confirmations every 2 seconds
+	callbackService.StartConfirmationChecker(ctx, 1*time.Second) // Check for confirmations every 1 second
 	miscService := misc.NewMiscService(miscRepository, cfg, moneroPayClient)
 
 	// Initialize handlers
