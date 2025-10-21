@@ -2,6 +2,7 @@ package vendor
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/config"
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/models"
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/rpc"
+	"github.com/monerokon/xmrpos/xmrpos-backend/internal/thirdparty/moneropay"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -19,11 +21,12 @@ type VendorService struct {
 	db        *gorm.DB
 	config    *config.Config
 	rpcClient *rpc.Client
+	moneroPay *moneropay.MoneroPayAPIClient
 	mu        sync.Mutex
 }
 
-func NewVendorService(repo VendorRepository, db *gorm.DB, cfg *config.Config, rpcClient *rpc.Client) *VendorService {
-	return &VendorService{repo: repo, db: db, config: cfg, rpcClient: rpcClient}
+func NewVendorService(repo VendorRepository, db *gorm.DB, cfg *config.Config, rpcClient *rpc.Client, moneroPay *moneropay.MoneroPayAPIClient) *VendorService {
+	return &VendorService{repo: repo, db: db, config: cfg, rpcClient: rpcClient, moneroPay: moneroPay}
 }
 
 func (s *VendorService) StartTransferCompleter(ctx context.Context, interval time.Duration) {
@@ -55,6 +58,7 @@ func (s *VendorService) completeTransfers(ctx context.Context) {
 	// For loop to try and complete transfers
 	for i := 15; i > 0; i-- {
 		dbTx := s.db.Begin()
+		var batchErr error
 		func() {
 			defer func() {
 				if r := recover(); r != nil {
@@ -65,6 +69,7 @@ func (s *VendorService) completeTransfers(ctx context.Context) {
 			transfers, err := s.repo.GetTransfersToComplete(ctx, i)
 			if err != nil || transfers == nil {
 				log.Println("Error fetching transfers to complete:", err)
+				batchErr = err
 				_ = dbTx.Rollback()
 				return
 			}
@@ -82,111 +87,224 @@ func (s *VendorService) completeTransfers(ctx context.Context) {
 				}
 				if err := s.repo.MarkTransactionsTransferred(ctx, dbTx, transfer.ID, transactionIDs); err != nil {
 					log.Printf("Error marking transactions as transferred: %v", err)
+					batchErr = err
 					_ = dbTx.Rollback()
 					return
 				}
 			}
 
-			// Format RPC call
-
-			type Destination struct {
-				Amount  int64  `json:"amount"`
-				Address string `json:"address"`
-			}
-
-			type TransferParams struct {
-				Destinations           []Destination `json:"destinations"`
-				SubtractFeeFromOutputs []uint        `json:"subtract_fee_from_outputs,omitempty"`
-				DoNotRelay             bool          `json:"do_not_relay,omitempty"`
-				Priority               uint          `json:"priority,omitempty"`
-			}
-
-			destinations := make([]Destination, len(transfers))
-			subtractFeeFromOutputs := make([]uint, 0, len(transfers))
+			destinations := make([]moneropay.Destination, len(transfers))
 			for i, transfer := range transfers {
-				destinations[i] = Destination{
+				destinations[i] = moneropay.Destination{
 					Amount:  transfer.Amount,
 					Address: transfer.Address,
 				}
-				subtractFeeFromOutputs = append(subtractFeeFromOutputs, uint(i))
 			}
 
-			params := TransferParams{
-				Destinations:           destinations,
-				SubtractFeeFromOutputs: subtractFeeFromOutputs,
-				DoNotRelay:             true,
-				Priority:               0,
-			}
-
-			type TransferResult struct {
-				Amount        int64 `json:"amount"`
-				AmountsByDest struct {
-					Amounts []int64 `json:"amounts"`
-				} `json:"amounts_by_dest"`
-				Fee            int64  `json:"fee"`
-				MultisigTxset  string `json:"multisig_txset"`
-				SpentKeyImages struct {
-					KeyImages []string `json:"key_images"`
-				} `json:"spent_key_images"`
-				TxBlob        string `json:"tx_blob"`
-				TxHash        string `json:"tx_hash"`
-				TxKey         string `json:"tx_key"`
-				TxMetadata    string `json:"tx_metadata"`
-				UnsignedTxset string `json:"unsigned_txset"`
-				Weight        int64  `json:"weight"`
-			}
-
-			// Transfer funds without relaying to test that all fits inside single transfer
-			var testResult TransferResult
-			// per-call timeout bound to sweep
-			callCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-			err = s.rpcClient.Call(callCtx, "transfer", params, &testResult)
-			cancel()
+			txHash, amounts, err := s.executeTransfer(ctx, destinations)
 			if err != nil {
-				log.Printf("RPC error: %v", err)
-				_ = dbTx.Rollback()
-				return
-			} else {
-				log.Printf("Test transfer result: %+v", testResult)
-			}
-
-			// If we reach here, it means the test transfer was successful
-
-			// Now transfer the funds for real
-
-			params.DoNotRelay = false // We want to relay the transaction now
-
-			var result TransferResult
-			callCtx2, cancel2 := context.WithTimeout(ctx, 15*time.Second)
-			err = s.rpcClient.Call(callCtx2, "transfer", params, &result)
-			cancel2()
-			if err != nil {
-				log.Printf("RPC error during transfer: %v", err)
+				log.Printf("Transfer execution failed: %v", err)
+				batchErr = err
 				_ = dbTx.Rollback()
 				return
 			}
-			log.Printf("Transfer result: %+v", result)
-			if result.TxHash == "" {
+			if txHash == "" {
 				log.Print("Transfer failed, no transaction hash returned")
+				batchErr = fmt.Errorf("transfer failed, empty tx hash")
 				_ = dbTx.Rollback()
 				return
 			}
 			// We need to mark the transfer as completed
 
-			for index, amount := range result.AmountsByDest.Amounts {
-				if err := s.repo.MarkTransferCompleted(ctx, dbTx, transfers[index].ID, amount, result.TxHash); err != nil {
+			for index, transfer := range transfers {
+				amountTransferred := transfer.Amount
+				if len(amounts) > index && amounts[index] != 0 {
+					amountTransferred = amounts[index]
+				}
+				if err := s.repo.MarkTransferCompleted(ctx, dbTx, transfer.ID, amountTransferred, txHash); err != nil {
 					log.Println("Error marking transfer as completed:", err)
+					batchErr = err
+					_ = dbTx.Rollback()
+					return
 				}
 			}
 			if err := dbTx.Commit().Error; err != nil {
 				log.Println("Error committing transaction:", err)
+				batchErr = err
 				return
 			}
 			log.Println("Transfer completed successfully")
 			return
 		}() // end per-iteration scope
+		if batchErr != nil {
+			break
+		}
 	}
 
+}
+
+func (s *VendorService) executeTransfer(ctx context.Context, destinations []moneropay.Destination) (string, []int64, error) {
+	if len(destinations) == 0 {
+		return "", nil, fmt.Errorf("no destinations provided")
+	}
+
+	var rpcErr error
+	if s.rpcClient != nil {
+		if txHash, amounts, err := s.transferWithWalletRPC(ctx, destinations); err == nil {
+			return txHash, amounts, nil
+		} else {
+			rpcErr = err
+			log.Printf("Wallet RPC transfer failed, attempting MoneroPay transfer: %v", err)
+		}
+	}
+
+	if s.moneroPay != nil {
+		txHash, amounts, err := s.transferWithMoneroPay(ctx, destinations)
+		if err == nil {
+			return txHash, amounts, nil
+		}
+		if rpcErr != nil {
+			return "", nil, fmt.Errorf("wallet RPC transfer failed (%v) and MoneroPay transfer failed (%w)", rpcErr, err)
+		}
+		return "", nil, err
+	}
+
+	if rpcErr != nil {
+		return "", nil, fmt.Errorf("wallet RPC transfer failed (%v) and no MoneroPay client configured", rpcErr)
+	}
+
+	return "", nil, fmt.Errorf("no transfer backend configured")
+}
+
+func (s *VendorService) transferWithWalletRPC(ctx context.Context, destinations []moneropay.Destination) (string, []int64, error) {
+	if s.rpcClient == nil {
+		return "", nil, fmt.Errorf("wallet RPC client not configured")
+	}
+
+	type rpcDestination struct {
+		Amount  int64  `json:"amount"`
+		Address string `json:"address"`
+	}
+
+	type transferParams struct {
+		Destinations           []rpcDestination `json:"destinations"`
+		SubtractFeeFromOutputs []uint           `json:"subtract_fee_from_outputs,omitempty"`
+		DoNotRelay             bool             `json:"do_not_relay,omitempty"`
+		Priority               uint             `json:"priority,omitempty"`
+	}
+
+	params := transferParams{
+		Destinations:           make([]rpcDestination, len(destinations)),
+		SubtractFeeFromOutputs: make([]uint, 0, len(destinations)),
+		DoNotRelay:             true,
+		Priority:               0,
+	}
+
+	for i, dest := range destinations {
+		params.Destinations[i] = rpcDestination{
+			Amount:  dest.Amount,
+			Address: dest.Address,
+		}
+		params.SubtractFeeFromOutputs = append(params.SubtractFeeFromOutputs, uint(i))
+	}
+
+	type transferResult struct {
+		Amount        int64 `json:"amount"`
+		AmountsByDest struct {
+			Amounts []int64 `json:"amounts"`
+		} `json:"amounts_by_dest"`
+		Fee            int64  `json:"fee"`
+		MultisigTxset  string `json:"multisig_txset"`
+		SpentKeyImages struct {
+			KeyImages []string `json:"key_images"`
+		} `json:"spent_key_images"`
+		TxBlob        string `json:"tx_blob"`
+		TxHash        string `json:"tx_hash"`
+		TxKey         string `json:"tx_key"`
+		TxMetadata    string `json:"tx_metadata"`
+		UnsignedTxset string `json:"unsigned_txset"`
+		Weight        int64  `json:"weight"`
+	}
+
+	// dry-run to ensure the transfer fits in a single transaction
+	var dryRun transferResult
+	callCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	err := s.rpcClient.Call(callCtx, "transfer", params, &dryRun)
+	cancel()
+	if err != nil {
+		return "", nil, err
+	}
+
+	params.DoNotRelay = false
+
+	var result transferResult
+	callCtx2, cancel2 := context.WithTimeout(ctx, 15*time.Second)
+	err = s.rpcClient.Call(callCtx2, "transfer", params, &result)
+	cancel2()
+	if err != nil {
+		return "", nil, err
+	}
+
+	if result.TxHash == "" {
+		return "", nil, fmt.Errorf("wallet RPC transfer returned empty tx hash")
+	}
+
+	amounts := result.AmountsByDest.Amounts
+	if len(amounts) == 0 {
+		amounts = make([]int64, len(destinations))
+		for i, dest := range destinations {
+			amounts[i] = dest.Amount
+		}
+	}
+
+	return result.TxHash, amounts, nil
+}
+
+func (s *VendorService) transferWithMoneroPay(ctx context.Context, destinations []moneropay.Destination) (string, []int64, error) {
+	if s.moneroPay == nil {
+		return "", nil, fmt.Errorf("MoneroPay client not configured")
+	}
+
+	req := &moneropay.TransferRequest{
+		Destinations:           destinations,
+		SubtractFeeFromOutputs: make([]uint, len(destinations)),
+		DoNotRelay:             false,
+		Priority:               0,
+	}
+	for i := range destinations {
+		req.SubtractFeeFromOutputs[i] = uint(i)
+	}
+	callCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	resp, err := s.moneroPay.PostTransfer(callCtx, req)
+	if err != nil {
+		return "", nil, err
+	}
+	if resp == nil {
+		return "", nil, fmt.Errorf("MoneroPay transfer returned nil response")
+	}
+
+	txHash := resp.TxHash
+	if txHash == "" && len(resp.TxHashList) > 0 {
+		txHash = resp.TxHashList[0]
+	}
+	if txHash == "" {
+		return "", nil, fmt.Errorf("MoneroPay transfer returned empty tx hash")
+	}
+
+	amounts := make([]int64, len(resp.Destinations))
+	for i, dest := range resp.Destinations {
+		amounts[i] = dest.Amount
+	}
+	if len(amounts) == 0 {
+		amounts = make([]int64, len(destinations))
+		for i, dest := range destinations {
+			amounts[i] = dest.Amount
+		}
+	}
+
+	return txHash, amounts, nil
 }
 
 func (s *VendorService) CreateVendor(ctx context.Context, name string, password string, inviteCode string) (httpErr *models.HTTPError) {

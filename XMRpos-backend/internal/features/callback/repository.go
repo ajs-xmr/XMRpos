@@ -2,7 +2,6 @@ package callback
 
 import (
 	"context"
-	"time"
 
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/models"
 	"gorm.io/gorm"
@@ -42,7 +41,7 @@ func (r *callbackRepository) FindUnconfirmedTransactions(ctx context.Context) ([
 	var transactions []*models.Transaction
 	if err := r.db.WithContext(ctx).
 		Preload("SubTransactions").
-		Where("confirmed = ? AND created_at < ?", false, time.Now().Add(-time.Hour*6)).
+		Where("confirmed = ?", false).
 		Find(&transactions).Error; err != nil {
 		return nil, err
 	}

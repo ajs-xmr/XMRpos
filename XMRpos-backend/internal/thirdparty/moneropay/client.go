@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -203,7 +204,8 @@ func (client *MoneroPayAPIClient) PostTransfer(ctx context.Context, req *Transfe
 	defer func() { io.Copy(io.Discard, resp.Body); resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to create transfer: %s", resp.Status)
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to create transfer: %s: %s", resp.Status, strings.TrimSpace(string(bodyBytes)))
 	}
 
 	var transferResp TransferResponse

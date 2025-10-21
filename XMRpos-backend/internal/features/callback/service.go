@@ -29,15 +29,19 @@ func NewCallbackService(repo CallbackRepository, cfg *config.Config, moneroPay *
 
 func (s *CallbackService) StartConfirmationChecker(ctx context.Context, interval time.Duration) {
 	go func() {
+		runSweep := func(parent context.Context) {
+			sweepCtx, cancel := context.WithTimeout(parent, 20*time.Second)
+			s.checkUnconfirmedTransactions(sweepCtx)
+			cancel()
+		}
+
+		runSweep(ctx)
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				// isolate each sweep with its own deadline
-				sweepCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
-				s.checkUnconfirmedTransactions(sweepCtx)
-				cancel()
+				runSweep(ctx)
 			case <-ctx.Done():
 				return
 			}
