@@ -22,6 +22,7 @@ import androidx.navigation.NavHostController
 import org.monerokon.xmrpos.R
 import org.monerokon.xmrpos.ui.PaymentSuccess
 import org.monerokon.xmrpos.ui.common.composables.CustomAlertDialog
+import java.math.BigDecimal
 
 @Composable
 fun PaymentCheckoutScreenRoot(viewModel: PaymentCheckoutViewModel, navController: NavHostController, fiatAmount: Double, primaryFiatCurrency: String) {
@@ -49,7 +50,7 @@ fun PaymentCheckoutScreen(
     primaryFiatCurrency: String,
     referenceFiatCurrencies: List<String>,
     exchangeRates: Map<String, Double>?,
-    targetXMRvalue: Double,
+    targetXMRvalue: BigDecimal,
     qrCodeUri: String,
     generateQRCode: (String, Int, Int, Int, Int, Int) -> Bitmap,
     navigateBack: () -> Unit,

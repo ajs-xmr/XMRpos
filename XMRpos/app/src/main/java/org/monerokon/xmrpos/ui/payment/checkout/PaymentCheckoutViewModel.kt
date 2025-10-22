@@ -27,7 +27,6 @@ import java.math.RoundingMode
 import java.net.NetworkInterface
 import java.util.Hashtable
 import java.util.UUID
-import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.pow
 
@@ -56,7 +55,7 @@ class PaymentCheckoutViewModel @Inject constructor(
     var primaryFiatCurrency by mutableStateOf("")
     var referenceFiatCurrencies by mutableStateOf(listOf<String>())
     var exchangeRates: Map<String, Double>? by mutableStateOf(null)
-    var targetXMRvalue by mutableStateOf(0.0)
+    var targetXMRvalue by mutableStateOf(BigDecimal.ZERO)
 
     var qrCodeUri by mutableStateOf("")
     var address by mutableStateOf("")
@@ -91,7 +90,13 @@ class PaymentCheckoutViewModel @Inject constructor(
                 exchangeRates = exchangeRatesResponse.data
             }
 
-            targetXMRvalue = BigDecimal(paymentValue / (exchangeRates?.get(primaryFiatCurrency) ?: 0.0)).setScale(12, RoundingMode.UP).toDouble()
+            val rate = exchangeRates?.get(primaryFiatCurrency) ?: 0.0
+            targetXMRvalue = if (rate != 0.0) {
+                BigDecimal.valueOf(paymentValue)
+                    .divide(BigDecimal.valueOf(rate), 12, RoundingMode.UP)
+            } else {
+                BigDecimal.ZERO
+            }
 
             Log.i(logTag, "Reference exchange rates: $referenceFiatCurrencies")
             Log.i(logTag, "Exchange rates: $exchangeRates")
@@ -103,8 +108,13 @@ class PaymentCheckoutViewModel @Inject constructor(
     private fun startPayReceive() {
 
         viewModelScope.launch(Dispatchers.IO) {
+            val atomicAmount = targetXMRvalue
+                .setScale(12, RoundingMode.UP)
+                .movePointRight(12)
+                .longValueExact()
+
             val backendCreateTransactionRequest = BackendCreateTransactionRequest(
-                (targetXMRvalue * 10.0.pow(12)).toLong(),
+                atomicAmount,
                 "XMRpos",
                 paymentValue,
                 primaryFiatCurrency,
@@ -121,7 +131,9 @@ class PaymentCheckoutViewModel @Inject constructor(
             } else if (response is DataResult.Success) {
 
                 address = response.data.address
-                val formattedAmount = String.format(Locale.US, "%.8f", targetXMRvalue)
+                val formattedAmount = targetXMRvalue
+                    .setScale(12, RoundingMode.UP)
+                    .toPlainString()
                 qrCodeUri = "monero:${response.data.address}?tx_amount=$formattedAmount&tx_description=XMRpos"
 
                 backendRepository.observeCurrentTransactionUpdates(response.data.id)
