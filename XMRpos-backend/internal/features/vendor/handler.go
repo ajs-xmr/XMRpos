@@ -128,7 +128,9 @@ func (h *VendorHandler) CreatePos(w http.ResponseWriter, r *http.Request) {
 }
 
 type getBalanceResponse struct {
-	Balance int64 `json:"balance"`
+	Total    uint64 `json:"total"`
+	Unlocked uint64 `json:"unlocked"`
+	Locked   uint64 `json:"locked"`
 }
 
 func (h *VendorHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
@@ -155,7 +157,9 @@ func (h *VendorHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := getBalanceResponse{
-		Balance: *balance,
+		Total:    balance.Total,
+		Unlocked: balance.Unlocked,
+		Locked:   balance.Locked,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
