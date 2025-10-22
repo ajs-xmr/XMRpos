@@ -27,6 +27,7 @@ import java.math.RoundingMode
 import java.net.NetworkInterface
 import java.util.Hashtable
 import java.util.UUID
+import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.pow
 
@@ -120,7 +121,8 @@ class PaymentCheckoutViewModel @Inject constructor(
             } else if (response is DataResult.Success) {
 
                 address = response.data.address
-                qrCodeUri = "monero:${response.data.address}?tx_amount=${targetXMRvalue}&tx_description=XMRpos"
+                val formattedAmount = String.format(Locale.US, "%.8f", targetXMRvalue)
+                qrCodeUri = "monero:${response.data.address}?tx_amount=$formattedAmount&tx_description=XMRpos"
 
                 backendRepository.observeCurrentTransactionUpdates(response.data.id)
 
