@@ -27,7 +27,7 @@ fun CurrencyConverterCard(
     currency: String,
     exchangeRate: Double?,
     paymentValue: String,
-    targetXMRvalue: Double = 0.0,
+    targetXMRvalue: BigDecimal? = null,
     elevation: CardElevation = CardDefaults.cardElevation(6.dp),
     color: CardColors = CardDefaults.elevatedCardColors()
 ) {
@@ -66,13 +66,25 @@ fun CurrencyConverterCard(
             Column (
                 horizontalAlignment = Alignment.End
             ) {
-                if (exchangeRate != null) {
-                    if (targetXMRvalue != 0.0) {
-                        Text(text = "${BigDecimal(targetXMRvalue * exchangeRate).setScale(3, RoundingMode.HALF_UP)} $currency", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                        Text(text = "${BigDecimal(targetXMRvalue).setScale(5, RoundingMode.HALF_UP)} XMR", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    } else {
-                        Text(text = "${BigDecimal((1/exchangeRate) * paymentValue.toDouble()).setScale(5, RoundingMode.HALF_UP)} XMR", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                if (exchangeRate != null && exchangeRate != 0.0) {
+                    val rate = BigDecimal.valueOf(exchangeRate)
+                    val xmrAmount = targetXMRvalue ?: paymentValue.toDoubleOrNull()?.let {
+                        BigDecimal.valueOf(it).divide(rate, 12, RoundingMode.HALF_UP)
                     }
+
+                    if (xmrAmount != null) {
+                        val fiatAmount = xmrAmount.multiply(rate).setScale(3, RoundingMode.HALF_UP)
+                        Text(text = "${fiatAmount.toPlainString()} $currency", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        Text(text = "${xmrAmount.setScale(5, RoundingMode.HALF_UP).toPlainString()} XMR", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    } else {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                } else if (exchangeRate != null) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp)
+                    )
                 } else {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp)
