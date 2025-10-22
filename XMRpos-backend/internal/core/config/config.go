@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -35,6 +36,14 @@ type Config struct {
 	MoneroWalletRPCEndpoint string
 	MoneroWalletRPCUsername string
 	MoneroWalletRPCPassword string
+
+	// Monero Daemon RPC Configuration
+	MoneroDaemonRPCEndpoint string
+
+	// Wallet Settings
+	WalletName              string
+	WalletPassword          string
+	WalletAutoRefreshPeriod uint32
 }
 
 func LoadConfig() (*Config, error) {
@@ -70,6 +79,21 @@ func LoadConfig() (*Config, error) {
 		MoneroWalletRPCEndpoint: os.Getenv("MONERO_WALLET_RPC_ENDPOINT"),
 		MoneroWalletRPCUsername: os.Getenv("MONERO_WALLET_RPC_USERNAME"),
 		MoneroWalletRPCPassword: os.Getenv("MONERO_WALLET_RPC_PASSWORD"),
+
+		// Monero Daemon RPC Configuration
+		MoneroDaemonRPCEndpoint: os.Getenv("MONERO_DAEMON_RPC_ENDPOINT"),
+
+		// Wallet Settings
+		WalletName:     os.Getenv("WALLET_NAME"),
+		WalletPassword: os.Getenv("WALLET_PASSWORD"),
+	}
+
+	if period := os.Getenv("WALLET_AUTO_REFRESH_PERIOD"); period != "" {
+		value, err := strconv.ParseUint(period, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid WALLET_AUTO_REFRESH_PERIOD: %s", period)
+		}
+		config.WalletAutoRefreshPeriod = uint32(value)
 	}
 
 	// Validate required fields
