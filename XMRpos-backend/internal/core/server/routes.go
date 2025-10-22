@@ -21,7 +21,7 @@ import (
 )
 
 // Accept a context tied to server lifecycle to stop background loops on shutdown
-func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB) *chi.Mux {
+func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB, rpcClient *rpc.Client, moneroPayClient *moneropay.MoneroPayAPIClient) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Middleware
@@ -30,13 +30,20 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB) *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	moneroPayClient := moneropay.NewMoneroPayAPIClient()
+	if moneroPayClient == nil {
+		moneroPayClient = moneropay.NewMoneroPayAPIClient()
+		if cfg.MoneroPayBaseURL != "" {
+			moneroPayClient.BaseURL = cfg.MoneroPayBaseURL
+		}
+	}
 
-	rpcClient := rpc.NewClient(
-		cfg.MoneroWalletRPCEndpoint,
-		cfg.MoneroWalletRPCUsername,
-		cfg.MoneroWalletRPCPassword,
-	)
+	if rpcClient == nil {
+		rpcClient = rpc.NewClient(
+			cfg.MoneroWalletRPCEndpoint,
+			cfg.MoneroWalletRPCUsername,
+			cfg.MoneroWalletRPCPassword,
+		)
+	}
 
 	// Initialize repositories
 	adminRepository := admin.NewAdminRepository(db)
