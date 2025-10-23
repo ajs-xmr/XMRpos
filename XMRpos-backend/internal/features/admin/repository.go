@@ -38,9 +38,9 @@ func (r *adminRepository) ListVendorsWithBalances(ctx context.Context) ([]Vendor
 	var results []VendorSummary
 	err := r.db.WithContext(ctx).
 		Model(&models.Vendor{}).
-		Select("vendors.id AS id, vendors.name AS name, COALESCE(SUM(CASE WHEN transactions.confirmed = ? AND transactions.transferred = ? THEN transactions.amount ELSE 0 END), 0) AS balance", true, false).
+		Select("vendors.id AS id, vendors.name AS name, vendors.monero_subaddress AS monero_subaddress, COALESCE(SUM(CASE WHEN transactions.confirmed = ? AND transactions.transferred = ? THEN transactions.amount ELSE 0 END), 0) AS balance", true, false).
 		Joins("LEFT JOIN transactions ON transactions.vendor_id = vendors.id").
-		Group("vendors.id, vendors.name").
+		Group("vendors.id, vendors.name, vendors.monero_subaddress").
 		Order("vendors.id ASC").
 		Scan(&results).Error
 	if err != nil {

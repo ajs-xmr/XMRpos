@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,6 +36,10 @@ type WalletBalance struct {
 func NewVendorService(repo VendorRepository, db *gorm.DB, cfg *config.Config, rpcClient *rpc.Client, moneroPay *moneropay.MoneroPayAPIClient) *VendorService {
 	return &VendorService{repo: repo, db: db, config: cfg, rpcClient: rpcClient, moneroPay: moneroPay}
 }
+
+const moneroSubaddressPattern = "^8[0-9AB][1-9A-HJ-NP-Za-km-z]{93}$"
+
+var moneroSubaddressRegex = regexp.MustCompile(moneroSubaddressPattern)
 
 func (s *VendorService) StartTransferCompleter(ctx context.Context, interval time.Duration) {
 	go func() {
@@ -313,7 +319,7 @@ func (s *VendorService) transferWithMoneroPay(ctx context.Context, destinations 
 	return txHash, amounts, nil
 }
 
-func (s *VendorService) CreateVendor(ctx context.Context, name string, password string, inviteCode string) (httpErr *models.HTTPError) {
+func (s *VendorService) CreateVendor(ctx context.Context, name string, password string, inviteCode string, moneroSubaddress string) (httpErr *models.HTTPError) {
 
 	if len(name) < 3 || len(name) > 50 {
 		return models.NewHTTPError(http.StatusBadRequest, "name must be at least 3 characters and no more than 50 characters")
@@ -346,14 +352,24 @@ func (s *VendorService) CreateVendor(ctx context.Context, name string, password 
 		return models.NewHTTPError(http.StatusBadRequest, "invite code is for a different name")
 	}
 
+	moneroSubaddress = strings.TrimSpace(moneroSubaddress)
+	if moneroSubaddress == "" {
+		return models.NewHTTPError(http.StatusBadRequest, "monero_subaddress is required")
+	}
+
+	if !moneroSubaddressRegex.MatchString(moneroSubaddress) {
+		return models.NewHTTPError(http.StatusBadRequest, "monero_subaddress is invalid")
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return models.NewHTTPError(http.StatusInternalServerError, "error hashing password: "+err.Error())
 	}
 
 	vendor := &models.Vendor{
-		Name:         name,
-		PasswordHash: string(hashedPassword),
+		Name:             name,
+		PasswordHash:     string(hashedPassword),
+		MoneroSubaddress: moneroSubaddress,
 	}
 
 	err = s.repo.CreateVendor(ctx, vendor)

@@ -20,9 +20,10 @@ func NewVendorHandler(service *VendorService) *VendorHandler {
 }
 
 type createVendorRequest struct {
-	Name       string `json:"name"`
-	Password   string `json:"password"`
-	InviteCode string `json:"invite_code"`
+	Name             string `json:"name"`
+	Password         string `json:"password"`
+	InviteCode       string `json:"invite_code"`
+	MoneroSubaddress string `json:"monero_subaddress"`
 }
 
 func (h *VendorHandler) CreateVendor(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +40,7 @@ func (h *VendorHandler) CreateVendor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpErr := h.service.CreateVendor(ctx, req.Name, req.Password, req.InviteCode)
+	httpErr := h.service.CreateVendor(ctx, req.Name, req.Password, req.InviteCode, req.MoneroSubaddress)
 
 	if httpErr != nil {
 		http.Error(w, httpErr.Message, httpErr.Code)
