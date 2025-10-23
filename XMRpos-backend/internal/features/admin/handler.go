@@ -7,16 +7,18 @@ import (
 	"context"
 	"io"
 
+	vendorfeature "github.com/monerokon/xmrpos/xmrpos-backend/internal/features/vendor"
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/models"
 	"github.com/monerokon/xmrpos/xmrpos-backend/internal/core/utils"
 )
 
 type AdminHandler struct {
 	service *AdminService
+	vendorService *vendorfeature.VendorService
 }
 
-func NewAdminHandler(service *AdminService) *AdminHandler {
-	return &AdminHandler{service: service}
+func NewAdminHandler(service *AdminService, vendorService *vendorfeature.VendorService) *AdminHandler {
+	return &AdminHandler{service: service, vendorService: vendorService}
 }
 
 type createInviteRequest struct {
@@ -26,6 +28,12 @@ type createInviteRequest struct {
 
 type createInviteResponse struct {
 	InviteCode string `json:"invite_code"`
+}
+
+type walletBalanceResponse struct {
+	Total    uint64 `json:"total"`
+	Unlocked uint64 `json:"unlocked"`
+	Locked   uint64 `json:"locked"`
 }
 
 func (h *AdminHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +95,42 @@ func (h *AdminHandler) ListVendors(w http.ResponseWriter, r *http.Request) {
 	resp := struct {
 		Vendors []VendorSummary `json:"vendors"`
 	}{Vendors: vendors}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (h *AdminHandler) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
+	role, ok := utils.GetClaimFromContext(r.Context(), models.ClaimsRoleKey)
+	if !ok || role != "admin" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if h.vendorService == nil {
+		http.Error(w, "Vendor service not configured", http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	r = r.WithContext(ctx)
+
+	balance, httpErr := h.vendorService.GetBalance(ctx, 0)
+	if httpErr != nil {
+		http.Error(w, httpErr.Message, httpErr.Code)
+		return
+	}
+	if balance == nil {
+		http.Error(w, "Failed to retrieve wallet balance", http.StatusInternalServerError)
+		return
+	}
+
+	resp := walletBalanceResponse{
+		Total:    balance.Total,
+		Unlocked: balance.Unlocked,
+		Locked:   balance.Locked,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)

@@ -127,45 +127,6 @@ func (h *VendorHandler) CreatePos(w http.ResponseWriter, r *http.Request) {
 	io.Copy(io.Discard, r.Body)
 }
 
-type getBalanceResponse struct {
-	Total    uint64 `json:"total"`
-	Unlocked uint64 `json:"unlocked"`
-	Locked   uint64 `json:"locked"`
-}
-
-func (h *VendorHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-	r = r.WithContext(ctx)
-
-	role, ok := utils.GetClaimFromContext(r.Context(), models.ClaimsRoleKey)
-	if !ok || role != "vendor" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	vendorID, ok := utils.GetClaimFromContext(r.Context(), models.ClaimsVendorIDKey)
-	if !ok {
-		http.Error(w, "Unauthorized: vendorID not found", http.StatusUnauthorized)
-		return
-	}
-
-	balance, httpErr := h.service.GetBalance(ctx, *(vendorID.(*uint)))
-	if httpErr != nil {
-		http.Error(w, httpErr.Message, httpErr.Code)
-		return
-	}
-
-	resp := getBalanceResponse{
-		Total:    balance.Total,
-		Unlocked: balance.Unlocked,
-		Locked:   balance.Locked,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(resp)
-}
-
 type transferBalanceRequest struct {
 	Address string `json:"address"`
 }
