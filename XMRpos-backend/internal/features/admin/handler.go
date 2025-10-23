@@ -36,6 +36,11 @@ type walletBalanceResponse struct {
 	Locked   uint64 `json:"locked"`
 }
 
+type transferBalanceRequest struct {
+	VendorID uint   `json:"vendor_id"`
+	Address  string `json:"address"`
+}
+
 func (h *AdminHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
 	// check jwt if admin
 
@@ -135,3 +140,51 @@ func (h *AdminHandler) GetWalletBalance(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
 }
+
+func (h *AdminHandler) TransferBalance(w http.ResponseWriter, r *http.Request) {
+	role, ok := utils.GetClaimFromContext(r.Context(), models.ClaimsRoleKey)
+	if !ok || role != "admin" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if h.vendorService == nil {
+		http.Error(w, "Vendor service not configured", http.StatusInternalServerError)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
+	defer cancel()
+	r = r.WithContext(ctx)
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+
+	var req transferBalanceRequest
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.VendorID == 0 {
+		http.Error(w, "vendor_id is required", http.StatusBadRequest)
+		return
+	}
+
+	if req.Address == "" {
+		http.Error(w, "address is required", http.StatusBadRequest)
+		return
+	}
+
+	httpErr := h.vendorService.CreateTransfer(ctx, req.VendorID, req.Address)
+	if httpErr != nil {
+		http.Error(w, httpErr.Message, httpErr.Code)
+		return
+	}
+
+	resp := "Transfer initiated successfully"
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+	io.Copy(io.Discard, r.Body)
+}
+
