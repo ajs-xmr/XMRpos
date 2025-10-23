@@ -64,7 +64,7 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB, rpcClient *
 	miscService := misc.NewMiscService(miscRepository, cfg, moneroPayClient)
 
 	// Initialize handlers
-	adminHandler := admin.NewAdminHandler(adminService)
+	adminHandler := admin.NewAdminHandler(adminService, vendorService)
 	authHandler := auth.NewAuthHandler(authService)
 	vendorHandler := vendor.NewVendorHandler(vendorService)
 	posHandler := pos.NewPosHandler(posService)
@@ -99,12 +99,14 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB, rpcClient *
 
 		// Admin routes
 		r.Post("/admin/invite", adminHandler.CreateInvite)
+		r.Get("/admin/vendors", adminHandler.ListVendors)
+		r.Get("/admin/balance", adminHandler.GetWalletBalance)
+		r.Post("/admin/transfer-balance", adminHandler.TransferBalance)
 
 		// Vendor routes
 		r.Post("/vendor/delete", vendorHandler.DeleteVendor)
 		r.Post("/vendor/create-pos", vendorHandler.CreatePos)
-		r.Get("/vendor/balance", vendorHandler.GetBalance)
-		r.Post("/vendor/transfer-balance", vendorHandler.TransferBalance)
+		r.Get("/vendor/balance", vendorHandler.GetAccountBalance)
 
 		// POS routes
 		r.Post("/pos/create-transaction", posHandler.CreateTransaction)

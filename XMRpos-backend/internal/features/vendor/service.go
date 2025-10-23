@@ -481,6 +481,14 @@ func (s *VendorService) GetBalance(ctx context.Context, _ uint) (*WalletBalance,
 	}, nil
 }
 
+func (s *VendorService) GetVendorAccountBalance(ctx context.Context, vendorID uint) (int64, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	return s.repo.GetBalance(ctx, vendorID)
+}
+
 func (s *VendorService) CreateTransfer(ctx context.Context, vendorID uint, address string) *models.HTTPError {
 	s.mu.Lock()
 	defer s.mu.Unlock()
