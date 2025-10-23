@@ -14,6 +14,12 @@ type AdminService struct {
 	config *config.Config
 }
 
+type VendorSummary struct {
+	ID      uint   `json:"id"`
+	Name    string `json:"name"`
+	Balance int64  `json:"balance"`
+}
+
 func NewAdminService(repo AdminRepository, cfg *config.Config) *AdminService {
 	return &AdminService{repo: repo, config: cfg}
 }
@@ -42,4 +48,12 @@ func (s *AdminService) CreateInvite(ctx context.Context, validUntil time.Time, f
 	}
 
 	return inviteCode, nil
+}
+
+func (s *AdminService) ListVendorsWithBalances(ctx context.Context) ([]VendorSummary, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	return s.repo.ListVendorsWithBalances(ctx)
 }

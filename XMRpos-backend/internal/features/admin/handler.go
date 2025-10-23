@@ -66,3 +66,28 @@ func (h *AdminHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 	io.Copy(io.Discard, r.Body)
 }
+
+func (h *AdminHandler) ListVendors(w http.ResponseWriter, r *http.Request) {
+	role, ok := utils.GetClaimFromContext(r.Context(), models.ClaimsRoleKey)
+	if !ok || role != "admin" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	r = r.WithContext(ctx)
+
+	vendors, err := h.service.ListVendorsWithBalances(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := struct {
+		Vendors []VendorSummary `json:"vendors"`
+	}{Vendors: vendors}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}

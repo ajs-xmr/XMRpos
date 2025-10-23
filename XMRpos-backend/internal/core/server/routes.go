@@ -99,6 +99,7 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB, rpcClient *
 
 		// Admin routes
 		r.Post("/admin/invite", adminHandler.CreateInvite)
+		r.Get("/admin/vendors", adminHandler.ListVendors)
 
 		// Vendor routes
 		r.Post("/vendor/delete", vendorHandler.DeleteVendor)
