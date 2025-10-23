@@ -26,6 +26,11 @@ type createVendorRequest struct {
 	MoneroSubaddress string `json:"monero_subaddress"`
 }
 
+type createVendorResponse struct {
+	Success bool `json:"success"`
+	ID      uint `json:"id"`
+}
+
 func (h *VendorHandler) CreateVendor(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -40,14 +45,17 @@ func (h *VendorHandler) CreateVendor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpErr := h.service.CreateVendor(ctx, req.Name, req.Password, req.InviteCode, req.MoneroSubaddress)
+	id, httpErr := h.service.CreateVendor(ctx, req.Name, req.Password, req.InviteCode, req.MoneroSubaddress)
 
 	if httpErr != nil {
 		http.Error(w, httpErr.Message, httpErr.Code)
 		return
 	}
 
-	resp := "Vendor created successfully"
+	resp := createVendorResponse{
+		Success: true,
+		ID:      id,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)

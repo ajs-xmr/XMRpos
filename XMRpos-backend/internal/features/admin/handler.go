@@ -38,7 +38,6 @@ type walletBalanceResponse struct {
 
 type transferBalanceRequest struct {
 	VendorID uint   `json:"vendor_id"`
-	Address  string `json:"address"`
 }
 
 func (h *AdminHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
@@ -171,12 +170,7 @@ func (h *AdminHandler) TransferBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Address == "" {
-		http.Error(w, "address is required", http.StatusBadRequest)
-		return
-	}
-
-	httpErr := h.vendorService.CreateTransfer(ctx, req.VendorID, req.Address)
+	httpErr := h.vendorService.CreateTransfer(ctx, req.VendorID)
 	if httpErr != nil {
 		http.Error(w, httpErr.Message, httpErr.Code)
 		return
