@@ -20,9 +20,15 @@ func NewVendorHandler(service *VendorService) *VendorHandler {
 }
 
 type createVendorRequest struct {
-	Name       string `json:"name"`
-	Password   string `json:"password"`
-	InviteCode string `json:"invite_code"`
+	Name             string `json:"name"`
+	Password         string `json:"password"`
+	InviteCode       string `json:"invite_code"`
+	MoneroSubaddress string `json:"monero_subaddress"`
+}
+
+type createVendorResponse struct {
+	Success bool `json:"success"`
+	ID      uint `json:"id"`
 }
 
 func (h *VendorHandler) CreateVendor(w http.ResponseWriter, r *http.Request) {
@@ -39,14 +45,17 @@ func (h *VendorHandler) CreateVendor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpErr := h.service.CreateVendor(ctx, req.Name, req.Password, req.InviteCode)
+	id, httpErr := h.service.CreateVendor(ctx, req.Name, req.Password, req.InviteCode, req.MoneroSubaddress)
 
 	if httpErr != nil {
 		http.Error(w, httpErr.Message, httpErr.Code)
 		return
 	}
 
-	resp := "Vendor created successfully"
+	resp := createVendorResponse{
+		Success: true,
+		ID:      id,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
@@ -87,6 +96,12 @@ type createPosRequest struct {
 	Password string `json:"password"`
 }
 
+type createPosResponse struct {
+	Success  bool   `json:"success"`
+	Name     string `json:"name"`
+	VendorID uint   `json:"vendor_id"`
+}
+
 type vendorBalanceResponse struct {
 	Balance int64 `json:"balance"`
 }
@@ -117,14 +132,20 @@ func (h *VendorHandler) CreatePos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpErr := h.service.CreatePos(ctx, req.Name, req.Password, *(vendorID.(*uint)))
+	id := *(vendorID.(*uint))
+
+	httpErr := h.service.CreatePos(ctx, req.Name, req.Password, id)
 
 	if httpErr != nil {
 		http.Error(w, httpErr.Message, httpErr.Code)
 		return
 	}
 
-	resp := "POS created successfully"
+	resp := createPosResponse{
+		Success:  true,
+		Name:     req.Name,
+		VendorID: id,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)

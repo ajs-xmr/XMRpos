@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,6 +36,10 @@ type WalletBalance struct {
 func NewVendorService(repo VendorRepository, db *gorm.DB, cfg *config.Config, rpcClient *rpc.Client, moneroPay *moneropay.MoneroPayAPIClient) *VendorService {
 	return &VendorService{repo: repo, db: db, config: cfg, rpcClient: rpcClient, moneroPay: moneroPay}
 }
+
+const moneroSubaddressPattern = "^8[0-9AB][1-9A-HJ-NP-Za-km-z]{93}$"
+
+var moneroSubaddressRegex = regexp.MustCompile(moneroSubaddressPattern)
 
 func (s *VendorService) StartTransferCompleter(ctx context.Context, interval time.Duration) {
 	go func() {
@@ -313,60 +319,70 @@ func (s *VendorService) transferWithMoneroPay(ctx context.Context, destinations 
 	return txHash, amounts, nil
 }
 
-func (s *VendorService) CreateVendor(ctx context.Context, name string, password string, inviteCode string) (httpErr *models.HTTPError) {
+func (s *VendorService) CreateVendor(ctx context.Context, name string, password string, inviteCode string, moneroSubaddress string) (id uint, httpErr *models.HTTPError) {
 
 	if len(name) < 3 || len(name) > 50 {
-		return models.NewHTTPError(http.StatusBadRequest, "name must be at least 3 characters and no more than 50 characters")
+		return 0, models.NewHTTPError(http.StatusBadRequest, "name must be at least 3 characters and no more than 50 characters")
 	}
 
 	if len(password) < 8 || len(password) > 50 {
-		return models.NewHTTPError(http.StatusBadRequest, "password must be at least 8 characters and no more than 50 characters")
+		return 0, models.NewHTTPError(http.StatusBadRequest, "password must be at least 8 characters and no more than 50 characters")
 	}
 
 	nameTaken, err := s.repo.VendorByNameExists(ctx, name)
 
 	if err != nil {
-		return models.NewHTTPError(http.StatusInternalServerError, "error checking if vendor name exists: "+err.Error())
+		return 0, models.NewHTTPError(http.StatusInternalServerError, "error checking if vendor name exists: "+err.Error())
 	}
 
 	if nameTaken {
-		return models.NewHTTPError(http.StatusBadRequest, "vendor name already taken")
+		return 0, models.NewHTTPError(http.StatusBadRequest, "vendor name already taken")
 	}
 
 	invite, err := s.repo.FindInviteByCode(ctx, inviteCode)
 	if err != nil {
-		return models.NewHTTPError(http.StatusBadRequest, "invalid invite code")
+		return 0, models.NewHTTPError(http.StatusBadRequest, "invalid invite code")
 	}
 
 	if invite.Used {
-		return models.NewHTTPError(http.StatusBadRequest, "invite code already used")
+		return 0, models.NewHTTPError(http.StatusBadRequest, "invite code already used")
 	}
 
 	if invite.ForcedName != nil && *invite.ForcedName != name {
-		return models.NewHTTPError(http.StatusBadRequest, "invite code is for a different name")
+		return 0, models.NewHTTPError(http.StatusBadRequest, "invite code is for a different name")
+	}
+
+	moneroSubaddress = strings.TrimSpace(moneroSubaddress)
+	if moneroSubaddress == "" {
+		return 0, models.NewHTTPError(http.StatusBadRequest, "monero_subaddress is required")
+	}
+
+	if !moneroSubaddressRegex.MatchString(moneroSubaddress) {
+		return 0, models.NewHTTPError(http.StatusBadRequest, "monero_subaddress is invalid")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return models.NewHTTPError(http.StatusInternalServerError, "error hashing password: "+err.Error())
+		return 0, models.NewHTTPError(http.StatusInternalServerError, "error hashing password: "+err.Error())
 	}
 
 	vendor := &models.Vendor{
-		Name:         name,
-		PasswordHash: string(hashedPassword),
+		Name:             name,
+		PasswordHash:     string(hashedPassword),
+		MoneroSubaddress: moneroSubaddress,
 	}
 
 	err = s.repo.CreateVendor(ctx, vendor)
 	if err != nil {
-		return models.NewHTTPError(http.StatusInternalServerError, "error creating vendor: "+err.Error())
+		return 0, models.NewHTTPError(http.StatusInternalServerError, "error creating vendor: "+err.Error())
 	}
 
 	err = s.repo.SetInviteToUsed(ctx, invite.ID)
 	if err != nil {
-		return models.NewHTTPError(http.StatusInternalServerError, "error setting invite to used: "+err.Error())
+		return 0, models.NewHTTPError(http.StatusInternalServerError, "error setting invite to used: "+err.Error())
 	}
 
-	return nil
+	return vendor.ID, nil
 }
 
 func (s *VendorService) DeleteVendor(ctx context.Context, vendorID uint) (httpErr *models.HTTPError) {
@@ -489,9 +505,24 @@ func (s *VendorService) GetVendorAccountBalance(ctx context.Context, vendorID ui
 	return s.repo.GetBalance(ctx, vendorID)
 }
 
-func (s *VendorService) CreateTransfer(ctx context.Context, vendorID uint, address string) *models.HTTPError {
+func (s *VendorService) CreateTransfer(ctx context.Context, vendorID uint) *models.HTTPError {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	vendor, err := s.repo.GetVendorByID(ctx, vendorID)
+	if err != nil {
+		return models.NewHTTPError(http.StatusInternalServerError, "DB error: "+err.Error())
+	}
+	if vendor == nil {
+		return models.NewHTTPError(http.StatusBadRequest, "Vendor not found")
+	}
+	address := strings.TrimSpace(vendor.MoneroSubaddress)
+	if address == "" {
+		return models.NewHTTPError(http.StatusBadRequest, "Vendor is missing a Monero subaddress")
+	}
+	if !moneroSubaddressRegex.MatchString(address) {
+		return models.NewHTTPError(http.StatusBadRequest, "Stored vendor subaddress is invalid")
+	}
 
 	// Check if vendor already has a transfer in progress
 	transfer, err := s.repo.GetActiveTransferByVendorID(ctx, vendorID)
@@ -501,8 +532,6 @@ func (s *VendorService) CreateTransfer(ctx context.Context, vendorID uint, addre
 	if transfer != nil {
 		return models.NewHTTPError(http.StatusBadRequest, "Transfer already in progress for this vendor")
 	}
-
-	/* var transactionIDs []uint */
 
 	transactions, err := s.repo.GetAllTransferableTransactions(ctx, vendorID)
 

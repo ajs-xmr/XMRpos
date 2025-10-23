@@ -9,6 +9,7 @@ type Vendor struct {
 	Name            string        `gorm:"unique;not null"`
 	PasswordHash    string        `gorm:"not null"`
 	PasswordVersion uint32        `gorm:"not null;default:1"`
+	MoneroSubaddress string       `gorm:"not null"`
 	Pos             []Pos         `gorm:"foreignKey:VendorID"` // One-to-many relationship with Pos
 	Balance         int64         `gorm:"not null;default:0"`
 	Transactions    []Transaction `gorm:"foreignKey:VendorID"` // One-to-many relationship with Transactions
