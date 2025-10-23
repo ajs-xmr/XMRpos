@@ -32,7 +32,7 @@ class PrinterRepository(private val printerServiceManager: PrinterServiceManager
         printerServiceManager.printText("TXID: ${paymentSuccess.txId}")
         printerServiceManager.printText("XMR: ${paymentSuccess.xmrAmount}")
         printerServiceManager.printText("${paymentSuccess.primaryFiatCurrency}: ${paymentSuccess.fiatAmount}")
-        printerServiceManager.printText("Exchange rate: ${paymentSuccess.exchangeRate} ${paymentSuccess.primaryFiatCurrency} / XMR")
+        printerServiceManager.printText("Exchange rate: ${paymentSuccess.exchangeRate} ${paymentSuccess.exchangeRateCurrency} / XMR")
         printerServiceManager.printSpacer()
         printerServiceManager.printTextCenter(dataStoreRepository.getReceiptFooter().first())
         printerServiceManager.printEnd()

@@ -45,6 +45,18 @@ class ExchangeRateRepository @Inject constructor(
         }
     }
 
+    fun fetchExchangeRatesForCurrencies(currencies: List<String>): Flow<DataResult<ExchangeRateResponse>> {
+        return flow {
+            Log.i(logTag, "Fetching exchange rates for: $currencies")
+            emit(
+                exchangeRateRemoteDataSource.fetchExchangeRates(
+                    "XMR",
+                    currencies
+                )
+            )
+        }
+    }
+
     // get primary fiat currency from DataStore
     fun getPrimaryFiatCurrency(): Flow<String> {
         return dataStoreLocalDataSource.getPrimaryFiatCurrency()

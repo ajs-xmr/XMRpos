@@ -83,7 +83,7 @@ fun NavGraphRoot(
                 composable<PaymentSuccess> {
                     val args = it.toRoute<PaymentSuccess>()
                     val paymentSuccessViewModel: PaymentSuccessViewModel = hiltViewModel()
-                    PaymentSuccessScreenRoot(viewModel = paymentSuccessViewModel, navController = navController, fiatAmount = args.fiatAmount, primaryFiatCurrency = args.primaryFiatCurrency, txId = args.txId, xmrAmount = args.xmrAmount, exchangeRate = args.exchangeRate, timestamp = args.timestamp, showPrintReceipt = args.showPrintReceipt)
+                    PaymentSuccessScreenRoot(viewModel = paymentSuccessViewModel, navController = navController, fiatAmount = args.fiatAmount, primaryFiatCurrency = args.primaryFiatCurrency, txId = args.txId, xmrAmount = args.xmrAmount, exchangeRate = args.exchangeRate, timestamp = args.timestamp, showPrintReceipt = args.showPrintReceipt, exchangeRateCurrency = args.exchangeRateCurrency)
                 }
                 composable<Settings> {
                     val mainSettingsViewModel: MainSettingsViewModel = viewModel()
@@ -140,6 +140,7 @@ data class PaymentSuccess(
     val exchangeRate: Double,
     val timestamp: String,
     val showPrintReceipt: Boolean,
+    val exchangeRateCurrency: String = primaryFiatCurrency,
 )
 
 // Settings routes

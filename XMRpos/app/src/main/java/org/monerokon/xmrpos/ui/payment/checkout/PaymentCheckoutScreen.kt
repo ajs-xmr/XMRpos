@@ -59,6 +59,11 @@ fun PaymentCheckoutScreen(
     navigateToPaymentSuccess: (PaymentSuccess) -> Unit
 ) {
     val openAlertDialog = remember { mutableStateOf(false) }
+    val secondaryCurrencies = if (primaryFiatCurrency == "XMR") {
+        referenceFiatCurrencies.filter { it != exchangeRateCurrency }
+    } else {
+        referenceFiatCurrencies
+    }
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column (
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -67,7 +72,7 @@ fun PaymentCheckoutScreen(
             Spacer(modifier = Modifier.height(32.dp))
             QRCodeWithImage(qrCodeUri, generateQRCode)
             Spacer(modifier = Modifier.height(32.dp))
-            CurrencyConverterCard(primaryFiatCurrency, exchangeRates?.get(primaryFiatCurrency), paymentValue.toString(), targetXMRvalue = targetXMRvalue)
+            CurrencyConverterCard(exchangeRateCurrency, exchangeRates?.get(exchangeRateCurrency), paymentValue.toString(), targetXMRvalue = targetXMRvalue)
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedCard (
                 modifier = Modifier.fillMaxWidth().height(200.dp),
@@ -75,9 +80,9 @@ fun PaymentCheckoutScreen(
                 LazyColumn(
 
                 ) {
-                    items(referenceFiatCurrencies.size) { index ->
-                        CurrencyConverterCard(referenceFiatCurrencies[index], exchangeRates?.get(referenceFiatCurrencies[index]), paymentValue.toString(), targetXMRvalue = targetXMRvalue, elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), color = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface))
-                        if (index < referenceFiatCurrencies.size - 1) arrayOf(
+                    items(secondaryCurrencies.size) { index ->
+                        CurrencyConverterCard(secondaryCurrencies[index], exchangeRates?.get(secondaryCurrencies[index]), paymentValue.toString(), targetXMRvalue = targetXMRvalue, elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), color = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface))
+                        if (index < secondaryCurrencies.size - 1) arrayOf(
                             HorizontalDivider()
                         )
                     }

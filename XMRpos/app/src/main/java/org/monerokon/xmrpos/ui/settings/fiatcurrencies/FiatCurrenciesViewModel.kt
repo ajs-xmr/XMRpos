@@ -22,6 +22,7 @@ class FiatCurrenciesViewModel @Inject constructor(
 
     // TODO: Add more fiat currencies after confirming they are supported by the exchange rate API
     val fiatOptions = listOf(
+        "XMR",
         "ARS", "AUD", "BRL", "CAD",
         "CLP", "CZK", "EUR", "GBP", "GEL", "HUF", "IDR", "INR", "KRW",
         "MXN", "MYR",

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.monerokon.xmrpos.ui.common.composables.CustomAlertDialog
+import java.math.BigDecimal
 
 // PaymentEntryScreenRoot
 @Composable
@@ -31,6 +32,7 @@ fun PaymentEntryScreenRoot(viewModel: PaymentEntryViewModel, navController: NavH
         paymentValue = viewModel.paymentValue,
         primaryFiatCurrency = viewModel.primaryFiatCurrency,
         exchangeRate = viewModel.exchangeRate,
+        exchangeRateCurrency = viewModel.exchangeRateCurrency,
         onDigitClick = viewModel::addDigit,
         onBackspaceClick = viewModel::removeDigit,
         onClearClick = viewModel::clear,
@@ -49,6 +51,7 @@ fun PaymentEntryScreenRoot(viewModel: PaymentEntryViewModel, navController: NavH
 @Composable
 fun PaymentEntryScreen(
     paymentValue: String,
+    exchangeRateCurrency: String,
     primaryFiatCurrency: String,
     exchangeRate: Double?,
     onDigitClick: (String) -> Unit,
@@ -83,9 +86,12 @@ fun PaymentEntryScreen(
                 modifier = Modifier.padding(horizontal = 44.dp).padding(bottom = 16.dp),
             ) {
                 CurrencyConverterCard(
-                    currency = primaryFiatCurrency,
+                    currency = exchangeRateCurrency,
                     exchangeRate = exchangeRate,
                     paymentValue = paymentValue,
+                    targetXMRvalue = if (primaryFiatCurrency == "XMR") {
+                        paymentValue.toDoubleOrNull()?.let { BigDecimal.valueOf(it) }
+                    } else null,
                 )
             }
             Column(

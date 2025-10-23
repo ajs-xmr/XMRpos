@@ -207,7 +207,8 @@ class PrinterSettingsViewModel @Inject constructor(
                 xmrAmount = 0.012039402,
                 exchangeRate = 201.3,
                 timestamp = "1970-01-01T00:00:00Z",
-                showPrintReceipt = true
+                showPrintReceipt = true,
+                exchangeRateCurrency = "USD"
             ))
             printingInProgress = false
         }

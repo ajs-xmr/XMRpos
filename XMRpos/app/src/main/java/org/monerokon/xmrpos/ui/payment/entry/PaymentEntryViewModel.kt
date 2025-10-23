@@ -30,9 +30,10 @@ class PaymentEntryViewModel @Inject constructor(
         this.navController = navController
     }
 
-    var primaryFiatCurrency by mutableStateOf("");
-    var paymentValue by mutableStateOf("0");
-    var exchangeRate: Double? by mutableStateOf(null);
+    var primaryFiatCurrency by mutableStateOf("")
+    var paymentValue by mutableStateOf("0")
+    var exchangeRate: Double? by mutableStateOf(null)
+    var exchangeRateCurrency by mutableStateOf("")
 
     var openSettingsPinCodeDialog by mutableStateOf(false)
     var requirePinCodeOpenSettings by mutableStateOf(true)
@@ -57,16 +58,41 @@ class PaymentEntryViewModel @Inject constructor(
 
     fun fetchExchangeRate() {
         viewModelScope.launch {
-            val primaryFiatCurrencyResponse = exchangeRateRepository.getPrimaryFiatCurrency().first()
-            primaryFiatCurrency = primaryFiatCurrencyResponse
+            val primaryCurrency = exchangeRateRepository.getPrimaryFiatCurrency().first()
+            primaryFiatCurrency = primaryCurrency
 
-            val exchangeRateResponse = exchangeRateRepository.fetchPrimaryExchangeRate().first()
+            val referenceCurrencies = dataStoreRepository.getReferenceFiatCurrencies().first()
+            val targetCurrencies = if (primaryCurrency == "XMR") {
+                if (referenceCurrencies.isNotEmpty()) referenceCurrencies else listOf("USD")
+            } else {
+                listOf(primaryCurrency)
+            }
 
-            if (exchangeRateResponse is DataResult.Failure) {
-                errorMessage = exchangeRateResponse.message
-            } else if (exchangeRateResponse is DataResult.Success) {
-                // get value of first key from ExchangeRateResponse (Map<String, Double>)
-                exchangeRate = exchangeRateResponse.data.entries.first().value
+            val preferredCurrency = if (primaryCurrency == "XMR") {
+                targetCurrencies.first()
+            } else {
+                primaryCurrency
+            }
+
+            val exchangeRateResponse = exchangeRateRepository.fetchExchangeRatesForCurrencies(targetCurrencies).first()
+
+            when (exchangeRateResponse) {
+                is DataResult.Failure -> {
+                    errorMessage = exchangeRateResponse.message
+                    exchangeRate = null
+                    exchangeRateCurrency = preferredCurrency
+                }
+                is DataResult.Success -> {
+                    val rateEntry = exchangeRateResponse.data.entries.firstOrNull { it.key == preferredCurrency }
+                        ?: exchangeRateResponse.data.entries.firstOrNull()
+                    if (rateEntry != null) {
+                        exchangeRateCurrency = rateEntry.key
+                        exchangeRate = rateEntry.value
+                    } else {
+                        exchangeRateCurrency = preferredCurrency
+                        exchangeRate = null
+                    }
+                }
             }
         }
     }

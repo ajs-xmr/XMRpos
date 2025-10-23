@@ -55,6 +55,7 @@ class PaymentCheckoutViewModel @Inject constructor(
     var primaryFiatCurrency by mutableStateOf("")
     var referenceFiatCurrencies by mutableStateOf(listOf<String>())
     var exchangeRates: Map<String, Double>? by mutableStateOf(null)
+    var exchangeRateCurrency by mutableStateOf("")
     var targetXMRvalue by mutableStateOf(BigDecimal.ZERO)
 
     var qrCodeUri by mutableStateOf("")
@@ -82,7 +83,27 @@ class PaymentCheckoutViewModel @Inject constructor(
             val referenceFiatCurrenciesResponse = exchangeRateRepository.getReferenceFiatCurrencies().first()
             referenceFiatCurrencies = referenceFiatCurrenciesResponse
 
-            val exchangeRatesResponse = exchangeRateRepository.fetchExchangeRates().first()
+            val displayCurrency = if (primaryFiatCurrency == "XMR") {
+                referenceFiatCurrencies.firstOrNull() ?: "USD"
+            } else {
+                primaryFiatCurrency
+            }
+            exchangeRateCurrency = displayCurrency
+
+            val targetCurrencies = mutableListOf<String>()
+            if (!targetCurrencies.contains(displayCurrency)) {
+                targetCurrencies.add(displayCurrency)
+            }
+            referenceFiatCurrencies.forEach { currency ->
+                if (!targetCurrencies.contains(currency)) {
+                    targetCurrencies.add(currency)
+                }
+            }
+            if (primaryFiatCurrency != "XMR" && !targetCurrencies.contains(primaryFiatCurrency)) {
+                targetCurrencies.add(0, primaryFiatCurrency)
+            }
+
+            val exchangeRatesResponse = exchangeRateRepository.fetchExchangeRatesForCurrencies(targetCurrencies).first()
 
             if (exchangeRatesResponse is DataResult.Failure) {
                 errorMessage = exchangeRatesResponse.message
@@ -90,12 +111,12 @@ class PaymentCheckoutViewModel @Inject constructor(
                 exchangeRates = exchangeRatesResponse.data
             }
 
-            val rate = exchangeRates?.get(primaryFiatCurrency) ?: 0.0
-            targetXMRvalue = if (rate != 0.0) {
-                BigDecimal.valueOf(paymentValue)
-                    .divide(BigDecimal.valueOf(rate), 12, RoundingMode.UP)
-            } else {
-                BigDecimal.ZERO
+            val rateForDisplay = exchangeRates?.get(exchangeRateCurrency) ?: 0.0
+            targetXMRvalue = when {
+                primaryFiatCurrency == "XMR" -> BigDecimal.valueOf(paymentValue)
+                rateForDisplay != 0.0 -> BigDecimal.valueOf(paymentValue)
+                    .divide(BigDecimal.valueOf(rateForDisplay), 12, RoundingMode.UP)
+                else -> BigDecimal.ZERO
             }
 
             Log.i(logTag, "Reference exchange rates: $referenceFiatCurrencies")
@@ -155,7 +176,8 @@ class PaymentCheckoutViewModel @Inject constructor(
                             primaryFiatCurrency = primaryFiatCurrency,
                             txId = it.subTransactions[0].txHash,
                             xmrAmount = it.amount / 10.0.pow(12),
-                            exchangeRate = exchangeRates?.get(primaryFiatCurrency) ?: 0.0,
+                            exchangeRate = exchangeRates?.get(exchangeRateCurrency) ?: 0.0,
+                            exchangeRateCurrency = exchangeRateCurrency,
                             timestamp = it.updatedAt,
                             showPrintReceipt = dataStoreRepository.getPrinterConnectionType().first() != "none"
                         ))

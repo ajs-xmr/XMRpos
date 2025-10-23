@@ -20,7 +20,7 @@ import androidx.navigation.NavHostController
 import org.monerokon.xmrpos.ui.PaymentSuccess
 
 @Composable
-fun PaymentSuccessScreenRoot(viewModel: PaymentSuccessViewModel, navController: NavHostController, fiatAmount: Double, primaryFiatCurrency: String, txId: String, xmrAmount: Double, exchangeRate: Double, timestamp: String, showPrintReceipt: Boolean) {
+fun PaymentSuccessScreenRoot(viewModel: PaymentSuccessViewModel, navController: NavHostController, fiatAmount: Double, primaryFiatCurrency: String, txId: String, xmrAmount: Double, exchangeRate: Double, timestamp: String, showPrintReceipt: Boolean, exchangeRateCurrency: String) {
     viewModel.setNavController(navController)
     PaymentSuccessScreen(
         navigateToEntry = viewModel::navigateToEntry,
@@ -32,6 +32,7 @@ fun PaymentSuccessScreenRoot(viewModel: PaymentSuccessViewModel, navController: 
         exchangeRate = exchangeRate,
         timestamp = timestamp,
         showPrintReceipt = showPrintReceipt,
+        exchangeRateCurrency = exchangeRateCurrency,
         printingInProgress = viewModel.printingInProgress
     )
 }
@@ -47,6 +48,7 @@ fun PaymentSuccessScreen(
     exchangeRate: Double,
     timestamp: String,
     showPrintReceipt: Boolean,
+    exchangeRateCurrency: String,
     printingInProgress: Boolean
 ) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -87,6 +89,7 @@ fun PaymentSuccessScreen(
                         txId = txId,
                         xmrAmount = xmrAmount,
                         exchangeRate = exchangeRate,
+                        exchangeRateCurrency = exchangeRateCurrency,
                         timestamp = timestamp,
                         showPrintReceipt = showPrintReceipt
                     ))}
