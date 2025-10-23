@@ -96,6 +96,12 @@ type createPosRequest struct {
 	Password string `json:"password"`
 }
 
+type createPosResponse struct {
+	Success  bool   `json:"success"`
+	Name     string `json:"name"`
+	VendorID uint   `json:"vendor_id"`
+}
+
 type vendorBalanceResponse struct {
 	Balance int64 `json:"balance"`
 }
@@ -126,14 +132,20 @@ func (h *VendorHandler) CreatePos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpErr := h.service.CreatePos(ctx, req.Name, req.Password, *(vendorID.(*uint)))
+	id := *(vendorID.(*uint))
+
+	httpErr := h.service.CreatePos(ctx, req.Name, req.Password, id)
 
 	if httpErr != nil {
 		http.Error(w, httpErr.Message, httpErr.Code)
 		return
 	}
 
-	resp := "POS created successfully"
+	resp := createPosResponse{
+		Success:  true,
+		Name:     req.Name,
+		VendorID: id,
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
