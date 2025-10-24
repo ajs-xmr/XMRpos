@@ -35,8 +35,6 @@ import org.monerokon.xmrpos.ui.settings.backend.BackendScreenRoot
 import org.monerokon.xmrpos.ui.settings.backend.BackendViewModel
 import org.monerokon.xmrpos.ui.settings.companyinformation.CompanyInformationScreenRoot
 import org.monerokon.xmrpos.ui.settings.companyinformation.CompanyInformationViewModel
-import org.monerokon.xmrpos.ui.settings.exporttransactions.ExportTransactionsScreenRoot
-import org.monerokon.xmrpos.ui.settings.exporttransactions.ExportTransactionsViewModel
 import org.monerokon.xmrpos.ui.settings.fiatcurrencies.FiatCurrenciesScreenRoot
 import org.monerokon.xmrpos.ui.settings.fiatcurrencies.FiatCurrenciesViewModel
 import org.monerokon.xmrpos.ui.settings.main.MainSettingsScreenRoot
@@ -45,6 +43,8 @@ import org.monerokon.xmrpos.ui.settings.moneropay.SecurityScreenRoot
 import org.monerokon.xmrpos.ui.settings.moneropay.SecurityViewModel
 import org.monerokon.xmrpos.ui.settings.printersettings.PrinterSettingsScreenRoot
 import org.monerokon.xmrpos.ui.settings.printersettings.PrinterSettingsViewModel
+import org.monerokon.xmrpos.ui.settings.transactionhistory.TransactionHistoryScreenRoot
+import org.monerokon.xmrpos.ui.settings.transactionhistory.TransactionHistoryViewModel
 
 @Composable
 fun NavGraphRoot(
@@ -101,9 +101,9 @@ fun NavGraphRoot(
                     val securityViewModel: SecurityViewModel = hiltViewModel()
                     SecurityScreenRoot(viewModel = securityViewModel, navController = navController)
                 }
-                composable<ExportTransactions> {
-                    val exportTransactionsViewModel: ExportTransactionsViewModel = hiltViewModel()
-                    ExportTransactionsScreenRoot(viewModel = exportTransactionsViewModel, navController = navController)
+                composable<TransactionHistory> {
+                    val transactionHistoryViewModel: TransactionHistoryViewModel = hiltViewModel()
+                    TransactionHistoryScreenRoot(viewModel = transactionHistoryViewModel, navController = navController)
                 }
                 composable<Backend> {
                     val backendViewModel: BackendViewModel = hiltViewModel()
@@ -157,7 +157,7 @@ object FiatCurrencies
 object Security
 
 @Serializable
-object ExportTransactions
+object TransactionHistory
 
 @Serializable
 object Backend

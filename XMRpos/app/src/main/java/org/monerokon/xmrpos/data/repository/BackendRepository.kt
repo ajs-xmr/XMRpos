@@ -15,6 +15,7 @@ import org.monerokon.xmrpos.data.remote.backend.BackendRemoteDataSource
 import org.monerokon.xmrpos.data.remote.backend.model.BackendCreateTransactionRequest
 import org.monerokon.xmrpos.data.remote.backend.model.BackendCreateTransactionResponse
 import org.monerokon.xmrpos.data.remote.backend.model.BackendHealthResponse
+import org.monerokon.xmrpos.data.remote.backend.model.BackendTransactionHistoryResponse
 import org.monerokon.xmrpos.data.remote.backend.model.BackendTransactionStatusUpdate
 import org.monerokon.xmrpos.di.ApplicationScope
 import org.monerokon.xmrpos.shared.DataResult
@@ -48,6 +49,10 @@ class BackendRepository @Inject constructor(
 
     suspend fun createTransaction(request: BackendCreateTransactionRequest): DataResult<BackendCreateTransactionResponse> {
         return backendRemoteDataSource.createTransaction(request)
+    }
+
+    suspend fun fetchTransactionHistory(): DataResult<BackendTransactionHistoryResponse> {
+        return backendRemoteDataSource.fetchTransactionHistory()
     }
 
     fun observeCurrentTransactionUpdates(transactionId: Int) {

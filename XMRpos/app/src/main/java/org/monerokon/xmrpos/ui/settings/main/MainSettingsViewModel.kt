@@ -6,11 +6,11 @@ import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import org.monerokon.xmrpos.ui.Backend
 import org.monerokon.xmrpos.ui.CompanyInformation
-import org.monerokon.xmrpos.ui.ExportTransactions
 import org.monerokon.xmrpos.ui.FiatCurrencies
 import org.monerokon.xmrpos.ui.PaymentEntry
 import org.monerokon.xmrpos.ui.PrinterSettings
 import org.monerokon.xmrpos.ui.Security
+import org.monerokon.xmrpos.ui.TransactionHistory
 
 class MainSettingsViewModel (private val savedStateHandle: SavedStateHandle): ViewModel() {
 
@@ -36,8 +36,8 @@ class MainSettingsViewModel (private val savedStateHandle: SavedStateHandle): Vi
         navController?.navigate(Security)
     }
 
-    fun navigateToExportTransactions() {
-        navController?.navigate(ExportTransactions)
+    fun navigateToTransactionHistory() {
+        navController?.navigate(TransactionHistory)
     }
 
     fun navigateToBackend() {

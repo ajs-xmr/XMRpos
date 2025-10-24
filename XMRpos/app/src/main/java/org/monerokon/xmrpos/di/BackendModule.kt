@@ -35,7 +35,6 @@ import org.monerokon.xmrpos.data.remote.backend.BackendRemoteDataSource
 import org.monerokon.xmrpos.data.repository.AuthRepository
 import org.monerokon.xmrpos.data.repository.BackendRepository
 import org.monerokon.xmrpos.data.repository.DataStoreRepository
-import org.monerokon.xmrpos.data.repository.TransactionRepository
 import javax.inject.Named
 import javax.inject.Qualifier
 import javax.inject.Singleton
