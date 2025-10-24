@@ -34,6 +34,11 @@ type createTransactionResponse struct {
 	Address string `json:"address"`
 }
 
+type listTransactionsResponse struct {
+	ConfirmedTransactions []ConfirmedTransactionSummary `json:"confirmed_transactions"`
+	PendingTransactions   []PendingTransactionSummary   `json:"pending_transactions"`
+}
+
 func (h *PosHandler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 8*time.Second)
 	defer cancel()
@@ -111,4 +116,37 @@ func (h *PosHandler) GetTransaction(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(transaction)
+}
+
+func (h *PosHandler) ListTransactions(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+	r = r.WithContext(ctx)
+
+	role, ok := utils.GetClaimFromContext(r.Context(), models.ClaimsRoleKey)
+	if !ok || role != "pos" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	vendorIDPtr, _ := r.Context().Value(models.ClaimsVendorIDKey).(*uint)
+	posIDPtr, _ := r.Context().Value(models.ClaimsPosIDKey).(*uint)
+	if vendorIDPtr == nil || posIDPtr == nil {
+		http.Error(w, "Vendor ID and POS ID are required", http.StatusBadRequest)
+		return
+	}
+
+	result, err := h.service.ListTransactionsByPos(ctx, *vendorIDPtr, *posIDPtr)
+	if err != nil {
+		http.Error(w, "Failed to list transactions", http.StatusInternalServerError)
+		return
+	}
+
+	resp := listTransactionsResponse{
+		ConfirmedTransactions: result.Confirmed,
+		PendingTransactions:   result.Pending,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }

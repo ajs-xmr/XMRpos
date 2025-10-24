@@ -23,8 +23,7 @@ import kotlinx.serialization.json.Json
 import org.monerokon.xmrpos.data.remote.backend.model.BackendCreateTransactionRequest
 import org.monerokon.xmrpos.data.remote.backend.model.BackendCreateTransactionResponse
 import org.monerokon.xmrpos.data.remote.backend.model.BackendHealthResponse
-import org.monerokon.xmrpos.data.remote.backend.model.BackendLoginRequest
-import org.monerokon.xmrpos.data.remote.backend.model.BackendLoginResponse
+import org.monerokon.xmrpos.data.remote.backend.model.BackendTransactionHistoryResponse
 import org.monerokon.xmrpos.data.remote.backend.model.BackendTransactionStatusUpdate
 import org.monerokon.xmrpos.di.MainKtorClient
 import org.monerokon.xmrpos.shared.DataResult
@@ -57,6 +56,15 @@ class BackendRemoteDataSource @Inject constructor(
     suspend fun fetchTransactionStatus(id: Int): DataResult<BackendTransactionStatusUpdate> {
         return try {
             val response = httpClient.get("pos/transaction/$id").body<BackendTransactionStatusUpdate>()
+            DataResult.Success(response)
+        } catch (e: Exception) {
+            DataResult.Failure(message = e.message ?: "Unknown error")
+        }
+    }
+
+    suspend fun fetchTransactionHistory(): DataResult<BackendTransactionHistoryResponse> {
+        return try {
+            val response = httpClient.get("pos/transactions").body<BackendTransactionHistoryResponse>()
             DataResult.Success(response)
         } catch (e: Exception) {
             DataResult.Failure(message = e.message ?: "Unknown error")

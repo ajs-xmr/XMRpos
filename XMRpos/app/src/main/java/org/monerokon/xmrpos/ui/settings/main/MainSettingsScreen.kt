@@ -22,7 +22,7 @@ fun MainSettingsScreenRoot(viewModel: MainSettingsViewModel, navController: NavH
         navigateToCompanyInformation = viewModel::navigateToCompanyInformation,
         navigateToFiatCurrencies = viewModel::navigateToFiatCurrencies,
         navigateToSecurity = viewModel::navigateToSecurity,
-        navigateToExportTransactions = viewModel::navigateToExportTransactions,
+        navigateToTransactionHistory = viewModel::navigateToTransactionHistory,
         navigateToBackend = viewModel::navigateToBackend,
         navigateToPrinterSettings = viewModel::navigateToPrinterSettings
     )
@@ -35,7 +35,7 @@ fun MainSettingsScreen(
     navigateToCompanyInformation: () -> Unit,
     navigateToFiatCurrencies: () -> Unit,
     navigateToSecurity: () -> Unit,
-    navigateToExportTransactions: () -> Unit,
+    navigateToTransactionHistory: () -> Unit,
     navigateToBackend: () -> Unit,
     navigateToPrinterSettings: () -> Unit
 ) {
@@ -71,7 +71,7 @@ fun MainSettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
             SettingsCard(text = "Security", onClick = {navigateToSecurity()})
             Spacer(modifier = Modifier.height(24.dp))
-            SettingsCard(text = "Export transactions", onClick = {navigateToExportTransactions()})
+            SettingsCard(text = "Transaction history", onClick = {navigateToTransactionHistory()})
             Spacer(modifier = Modifier.height(24.dp))
             SettingsCard(text = "Backend", onClick = {navigateToBackend()})
             Spacer(modifier = Modifier.height(24.dp))
