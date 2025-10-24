@@ -21,6 +21,27 @@ func NewPosService(repo PosRepository, cfg *config.Config, moneroPay *moneropay.
 	return &PosService{repo: repo, config: cfg, moneroPay: moneroPay}
 }
 
+type ConfirmedTransactionSummary struct {
+	TransactionID uint      `json:"transaction_id"`
+	TxHash        string    `json:"tx_hash"`
+	Timestamp     time.Time `json:"timestamp"`
+	Height        int64     `json:"height"`
+	Accepted      bool      `json:"accepted"`
+	Confirmed     bool      `json:"confirmed"`
+}
+
+type PendingTransactionSummary struct {
+	ID        uint  `json:"id"`
+	Amount    int64 `json:"amount"`
+	Accepted  bool  `json:"accepted"`
+	Confirmed bool  `json:"confirmed"`
+}
+
+type ListTransactionsResult struct {
+	Confirmed []ConfirmedTransactionSummary `json:"confirmed_transactions"`
+	Pending   []PendingTransactionSummary   `json:"pending_transactions"`
+}
+
 func (s *PosService) CreateTransaction(ctx context.Context, vendorID uint, posID uint, amount int64, description *string, amountInCurrency float64, currency string, requiredConfirmations int64) (id uint, address string, err error) {
 	if ctx == nil {
 		ctx = context.Background()
@@ -113,4 +134,45 @@ func (s *PosService) IsAuthorizedForTransaction(vendorID uint, posID uint, trans
 		return false
 	}
 	return true
+}
+
+func (s *PosService) ListTransactionsByPos(ctx context.Context, vendorID uint, posID uint) (*ListTransactionsResult, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	transactions, err := s.repo.FindTransactionsByPosID(ctx, vendorID, posID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &ListTransactionsResult{
+		Confirmed: make([]ConfirmedTransactionSummary, 0),
+		Pending:   make([]PendingTransactionSummary, 0),
+	}
+
+	for _, transaction := range transactions {
+		if transaction.Confirmed {
+			for _, sub := range transaction.SubTransactions {
+				result.Confirmed = append(result.Confirmed, ConfirmedTransactionSummary{
+					TransactionID: sub.TransactionID,
+					TxHash:        sub.TxHash,
+					Timestamp:     sub.Timestamp,
+					Height:        sub.Height,
+					Accepted:      transaction.Accepted,
+					Confirmed:     transaction.Confirmed,
+				})
+			}
+			continue
+		}
+
+		result.Pending = append(result.Pending, PendingTransactionSummary{
+			ID:        transaction.ID,
+			Amount:    transaction.Amount,
+			Accepted:  transaction.Accepted,
+			Confirmed: transaction.Confirmed,
+		})
+	}
+
+	return result, nil
 }

@@ -11,6 +11,7 @@ type PosRepository interface {
 	FindTransactionByID(ctx context.Context, id uint) (*models.Transaction, error)
 	CreateTransaction(ctx context.Context, transaction *models.Transaction) (*models.Transaction, error)
 	UpdateTransaction(ctx context.Context, transaction *models.Transaction) (*models.Transaction, error)
+	FindTransactionsByPosID(ctx context.Context, vendorID uint, posID uint) ([]*models.Transaction, error)
 }
 
 type posRepository struct {
@@ -50,4 +51,21 @@ func (r *posRepository) UpdateTransaction(ctx context.Context, transaction *mode
 		return nil, err
 	}
 	return transaction, nil
+}
+
+func (r *posRepository) FindTransactionsByPosID(ctx context.Context, vendorID uint, posID uint) ([]*models.Transaction, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	var transactions []*models.Transaction
+	if err := r.db.WithContext(ctx).
+		Preload("SubTransactions").
+		Where("vendor_id = ? AND pos_id = ?", vendorID, posID).
+		Order("created_at DESC").
+		Find(&transactions).Error; err != nil {
+		return nil, err
+	}
+
+	return transactions, nil
 }
