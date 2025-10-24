@@ -1,0 +1,21 @@
+server {
+  listen 80;
+  server_name localhost;
+
+  root /var/www/html;
+  index index.html;
+
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  location ~ ^/(misc|vendor|auth|pos)(/|$) {
+    proxy_pass http://xmr1.twed.org:8080;
+    proxy_set_header Host xmr1.twed.org;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_connect_timeout 5s;
+    proxy_send_timeout 30s;
+    proxy_read_timeout 30s;
+  }
+}
