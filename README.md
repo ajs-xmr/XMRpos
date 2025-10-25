@@ -137,6 +137,32 @@ docker run --rm \
 
 The APK will be created at `app/build/outputs/apk/debug/app-debug.apk`.
 
+# XMRpos Backend Server Installation
+
+On a clean Ubuntu LTS VPS:
+
+- Run:  
+  ```bash
+  wget https://raw.githubusercontent.com/MoneroKon/XMRpos/refs/heads/main/install.sh -O install.sh && chmod +x install.sh
+  ```
+
+- Execute:
+
+  ```bash
+  sudo ./install.sh
+  ```
+  This installs **MoneroPay** and **XMRpos-backend**. The script configures Docker, environment files, secrets, health checks, and wallet setup.
+
+- To remove everything:
+
+  ```bash
+  sudo ./install.sh clean
+  ```
+
+  This clears all containers, cloned repositories, and the `~/wallets` directory. Always back up your wallets.
+
+Refer to `XMRpos/XMRpos-backend/README.md` for API usage details.
+
 # Donate XMR
 
 **Address**:
