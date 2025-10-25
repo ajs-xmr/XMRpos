@@ -340,21 +340,21 @@ fun PaymentEntryControlButtons(
             icon = Icons.Rounded.Clear,
             contentDescription = "Clear",
             onClick = onClearClick,
-            containerColor = Color(0xFF770000),
+            containerColor = Color(0xFFFF5555),
             modifier = Modifier.weight(1f)
         )
         PaymentEntryControlButton(
             icon = Icons.AutoMirrored.Rounded.ArrowBack,
             contentDescription = "Back",
             onClick = onBackspaceClick,
-            containerColor = Color(0xFF797000), // Yellow
+            containerColor = Color(0xFFF1FA8C),
             modifier = Modifier.weight(1f)
         )
         PaymentEntryControlButton(
             icon = Icons.Rounded.Done,
             contentDescription = "Done",
             onClick = onSubmitClick,
-            containerColor = Color(0xFF1C6E00),
+            containerColor = Color(0xFF50FA7B),
             modifier = Modifier.weight(1f)
         )
     }
